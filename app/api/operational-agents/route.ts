@@ -177,13 +177,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: existingAgent } = await supabase
+  const { data: existingAgentsByEmail, error: existingAgentsByEmailError } = await supabase
     .from("operational_agents")
     .select("id")
     .eq("email", email)
-    .maybeSingle();
+    .limit(1);
 
-  if (existingAgent) {
+  if (existingAgentsByEmailError) {
+    return NextResponse.json(
+      {
+        error: `Falha ao validar e-mail de agente existente: ${existingAgentsByEmailError.message}`,
+      },
+      { status: 500 },
+    );
+  }
+
+  if ((existingAgentsByEmail ?? []).length > 0) {
     return NextResponse.json(
       { error: "Já existe um agente operacional cadastrado com este e-mail." },
       { status: 409 },
@@ -243,24 +252,32 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: existingAgentByAuth, error: existingAgentByAuthError } = await adminSupabase
+  const { data: existingAgentsByAuth, error: existingAgentByAuthError } = await adminSupabase
     .from("operational_agents")
     .select("id")
     .eq("auth_user_id", createdAuthUserId)
-    .maybeSingle();
+    .limit(1);
 
   if (existingAgentByAuthError) {
     if (shouldDeleteAuthUserOnRollback) {
       await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
     }
 
+    const migrationHint =
+      existingAgentByAuthError.message.includes("auth_user_id") &&
+      existingAgentByAuthError.message.includes("does not exist")
+        ? " Aplique a migration `supabase/migration_agent_app_support.sql` no banco de produção."
+        : "";
+
     return NextResponse.json(
-      { error: "Não foi possível validar o vínculo operacional do usuário." },
+      {
+        error: `Não foi possível validar o vínculo operacional do usuário: ${existingAgentByAuthError.message}.${migrationHint}`,
+      },
       { status: 500 },
     );
   }
 
-  if (existingAgentByAuth) {
+  if ((existingAgentsByAuth ?? []).length > 0) {
     return NextResponse.json(
       { error: "Este usuário já está vinculado a um agente operacional." },
       { status: 409 },
