@@ -31,6 +31,7 @@ begin
   end if;
 end $$;
 
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
@@ -558,3 +559,281 @@ begin
     alter publication supabase_realtime add table public.occurrence_logs;
   end if;
 end $$;
+
+-- Seed data: 20 sample occurrences in Caratinga/MG
+insert into public.occurrences (
+  id,
+  title,
+  description,
+  category,
+  status,
+  latitude,
+  longitude,
+  neighborhood,
+  sla_deadline,
+  created_at,
+  updated_at
+)
+values
+  (
+    '00000000-0000-0000-0000-000000000201',
+    'Buraco na Rua Joao Pinheiro',
+    'Buraco grande em frente ao numero 315 da Rua Joao Pinheiro, Centro, Caratinga.',
+    'buraco',
+    'aberto',
+    -19.7908,
+    -42.1392,
+    'Centro',
+    now() + interval '5 days',
+    now() - interval '20 days',
+    now() - interval '20 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000202',
+    'Postes apagados na Olegario Maciel',
+    'Trecho sem iluminacao entre os numeros 120 e 180 da Avenida Olegario Maciel.',
+    'iluminacao',
+    'em_analise',
+    -19.7921,
+    -42.1410,
+    'Centro',
+    now() + interval '4 days',
+    now() - interval '19 days',
+    now() - interval '18 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000203',
+    'Lixo acumulado na Rua Raul Soares',
+    'Ponto de descarte irregular de lixo na esquina com Rua Jose de Anchieta.',
+    'lixo',
+    'em_execucao',
+    -19.7887,
+    -42.1364,
+    'Santa Cruz',
+    now() + interval '2 days',
+    now() - interval '18 days',
+    now() - interval '17 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000204',
+    'Entulho na Praca Cesario Alvim',
+    'Restos de obra ocupando parte da calcada ao lado da banca de jornais.',
+    'entulho',
+    'aberto',
+    -19.7915,
+    -42.1381,
+    'Centro',
+    now() + interval '6 days',
+    now() - interval '17 days',
+    now() - interval '17 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000205',
+    'Vazamento de esgoto no Limoeiro',
+    'Esgoto correndo a ceu aberto na Rua Coronel Chiquinho, proximo ao numero 88.',
+    'esgoto',
+    'resolvido',
+    -19.7960,
+    -42.1452,
+    'Limoeiro',
+    now() - interval '1 day',
+    now() - interval '16 days',
+    now() - interval '3 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000206',
+    'Asfalto afundando na Avenida Dario Grossi',
+    'Afundamento no asfalto em frente ao ponto de onibus no bairro Santa Zita.',
+    'buraco',
+    'em_analise',
+    -19.7849,
+    -42.1428,
+    'Santa Zita',
+    now() + interval '3 days',
+    now() - interval '15 days',
+    now() - interval '14 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000207',
+    'Falta de luz publica na Rua Niteroi',
+    'Tres postes apagados em sequencia na Rua Niteroi, altura do numero 240.',
+    'iluminacao',
+    'aberto',
+    -19.7998,
+    -42.1470,
+    'Esperanca',
+    now() + interval '7 days',
+    now() - interval '14 days',
+    now() - interval '14 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000208',
+    'Lixo em calcada da Rua Professor Olinto',
+    'Sacos de lixo rasgados gerando mau cheiro e atraindo animais no local.',
+    'lixo',
+    'em_execucao',
+    -19.7933,
+    -42.1376,
+    'Centro',
+    now() + interval '2 days',
+    now() - interval '13 days',
+    now() - interval '12 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000209',
+    'Entulho em esquina da Catarina Cimini',
+    'Pilhas de entulho ocupando metade da via na Avenida Catarina Cimini.',
+    'entulho',
+    'aberto',
+    -19.8012,
+    -42.1493,
+    'Santo Antonio',
+    now() + interval '5 days',
+    now() - interval '12 days',
+    now() - interval '12 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000210',
+    'Mau cheiro de esgoto na Jose Belegard',
+    'Bueiro transbordando na Rua Jose Belegard, em frente ao numero 57.',
+    'esgoto',
+    'resolvido',
+    -19.7874,
+    -42.1441,
+    'Santa Cruz',
+    now() - interval '2 days',
+    now() - interval '11 days',
+    now() - interval '4 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000211',
+    'Buraco profundo na Marechal Deodoro',
+    'Buraco profundo na faixa da direita, dificultando passagem de motos e carros.',
+    'buraco',
+    'em_analise',
+    -19.7902,
+    -42.1404,
+    'Centro',
+    now() + interval '4 days',
+    now() - interval '10 days',
+    now() - interval '9 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000212',
+    'Iluminacao fraca na Tancredo Neves',
+    'Luminarias com baixa intensidade na Avenida Tancredo Neves apos as 19h.',
+    'iluminacao',
+    'aberto',
+    -19.8055,
+    -42.1516,
+    'Anapolis',
+    now() + interval '6 days',
+    now() - interval '9 days',
+    now() - interval '9 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000213',
+    'Descarte irregular na Padre Raul Motta',
+    'Sacolas e restos de poda acumulados no canteiro central da via.',
+    'lixo',
+    'em_execucao',
+    -19.7986,
+    -42.1463,
+    'Nossa Senhora Aparecida',
+    now() + interval '1 day',
+    now() - interval '8 days',
+    now() - interval '7 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000214',
+    'Entulho de reforma na Rua Belo Horizonte',
+    'Materiais de construcao abandonados obstruindo parte da sarjeta.',
+    'entulho',
+    'aberto',
+    -19.7944,
+    -42.1437,
+    'Limoeiro',
+    now() + interval '5 days',
+    now() - interval '7 days',
+    now() - interval '7 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000215',
+    'Buraco em cruzamento da Joaquim Carlos',
+    'Buraco no cruzamento da Rua Joaquim Carlos com Rua Sete de Setembro.',
+    'buraco',
+    'resolvido',
+    -19.8024,
+    -42.1502,
+    'Santa Zita',
+    now() - interval '3 days',
+    now() - interval '6 days',
+    now() - interval '2 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000216',
+    'Esgoto vazando na Travessa do Rosario',
+    'Vazamento constante em frente ao numero 12, formando pocas na calcada.',
+    'esgoto',
+    'em_analise',
+    -19.7891,
+    -42.1388,
+    'Centro',
+    now() + interval '2 days',
+    now() - interval '5 days',
+    now() - interval '4 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000217',
+    'Acumulo de lixo na Rua Manoel Goncalves',
+    'Coleta atrasada ha tres dias na Rua Manoel Goncalves, quadra 2.',
+    'lixo',
+    'aberto',
+    -19.8061,
+    -42.1530,
+    'Esplanada',
+    now() + interval '4 days',
+    now() - interval '4 days',
+    now() - interval '4 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000218',
+    'Poste apagado na Moacyr de Mattos',
+    'Sem iluminacao no trecho comercial da Avenida Moacyr de Mattos.',
+    'iluminacao',
+    'em_execucao',
+    -19.8073,
+    -42.1552,
+    'Zacarias',
+    now() + interval '1 day',
+    now() - interval '3 days',
+    now() - interval '2 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000219',
+    'Buraco na Deputado Djalma Marinho',
+    'Buraco junto ao meio-fio causando risco para ciclistas no bairro Santa Cruz.',
+    'buraco',
+    'aberto',
+    -19.7972,
+    -42.1450,
+    'Santa Cruz',
+    now() + interval '6 days',
+    now() - interval '2 days',
+    now() - interval '2 days'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000220',
+    'Entulho removido na Rua Pedro de Oliveira',
+    'Ocorrencia finalizada apos retirada de entulho proximo ao numero 410.',
+    'entulho',
+    'resolvido',
+    -19.8005,
+    -42.1484,
+    'Esperanca',
+    now() - interval '1 day',
+    now() - interval '1 day',
+    now() - interval '12 hours'
+  )
+on conflict (id) do nothing;
+
