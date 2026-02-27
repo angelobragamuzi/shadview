@@ -1,0 +1,35 @@
+import type { Database } from "@/types/database";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+function getSupabaseEnv() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    "https://placeholder-project.supabase.co";
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder-anon-key";
+
+  return { supabaseUrl, supabaseAnonKey };
+}
+
+export function createServerSupabaseClient() {
+  const cookieStore = cookies();
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+
+  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options),
+          );
+        } catch {
+          // Renders in Server Components may not allow setting cookies.
+        }
+      },
+    },
+  });
+}
