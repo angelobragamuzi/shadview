@@ -3,8 +3,8 @@ import { sendSmtpMail } from "@/lib/email/smtp";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Institution, Team } from "@/types";
-import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -26,11 +26,112 @@ const createOperationalAgentBodySchema = z.object({
   teamId: z.string().uuid().nullable(),
 });
 
-function generateTemporaryPassword(length = 12) {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
-  const bytes = randomBytes(length);
+function getOperationalAgentPassword() {
+  const fixedPassword = process.env.OPERATIONAL_AGENT_DEFAULT_PASSWORD?.trim();
+  if (!fixedPassword) {
+    throw new Error(
+      "OPERATIONAL_AGENT_DEFAULT_PASSWORD não está configurada. Defina a senha padrão dos agentes.",
+    );
+  }
 
-  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+  if (fixedPassword.length < 8) {
+    throw new Error(
+      "OPERATIONAL_AGENT_DEFAULT_PASSWORD deve ter pelo menos 8 caracteres.",
+    );
+  }
+
+  return fixedPassword;
+}
+
+async function findAuthUserByEmail(
+  adminSupabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string,
+) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const perPage = 200;
+
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await adminSupabase.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const users = data.users ?? [];
+    const matchedUser = users.find(
+      (candidate) => candidate.email?.toLowerCase() === normalizedEmail,
+    );
+
+    if (matchedUser) {
+      return matchedUser;
+    }
+
+    if (users.length < perPage) {
+      break;
+    }
+  }
+
+  return null;
+}
+
+async function ensureAgentAuthUser(
+  adminSupabase: ReturnType<typeof createSupabaseAdminClient>,
+  params: {
+    email: string;
+    fullName: string;
+    password: string;
+  },
+): Promise<{
+  user: User;
+  createdNow: boolean;
+}> {
+  const { email, fullName, password } = params;
+  const existingUser = await findAuthUserByEmail(adminSupabase, email);
+
+  if (existingUser) {
+    const { data, error } = await adminSupabase.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+      user_metadata: {
+        ...(existingUser.user_metadata ?? {}),
+        full_name: fullName,
+      },
+    });
+
+    if (error || !data.user) {
+      throw new Error(
+        error?.message ?? "Não foi possível atualizar as credenciais do usuário existente.",
+      );
+    }
+
+    return {
+      user: data.user,
+      createdNow: false,
+    };
+  }
+
+  const { data, error } = await adminSupabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: fullName,
+    },
+  });
+
+  if (error || !data.user) {
+    throw new Error(
+      error?.message ?? "Não foi possível criar o usuário de autenticação para o agente.",
+    );
+  }
+
+  return {
+    user: data.user,
+    createdNow: true,
+  };
 }
 
 export async function POST(request: Request) {
@@ -89,7 +190,20 @@ export async function POST(request: Request) {
     );
   }
 
-  const temporaryPassword = generateTemporaryPassword();
+  let temporaryPassword: string;
+  try {
+    temporaryPassword = getOperationalAgentPassword();
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Senha padrão dos agentes não configurada.",
+      },
+      { status: 500 },
+    );
+  }
 
   let adminSupabase: ReturnType<typeof createSupabaseAdminClient>;
   try {
@@ -106,29 +220,52 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: createdAuthData, error: authCreateError } = await adminSupabase.auth.admin.createUser(
-    {
-      email,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-      },
-    },
-  );
+  let createdAuthUserId: string;
+  let shouldDeleteAuthUserOnRollback = false;
 
-  if (authCreateError || !createdAuthData.user) {
+  try {
+    const authProvision = await ensureAgentAuthUser(adminSupabase, {
+      email,
+      fullName,
+      password: temporaryPassword,
+    });
+    createdAuthUserId = authProvision.user.id;
+    shouldDeleteAuthUserOnRollback = authProvision.createdNow;
+  } catch (error) {
     return NextResponse.json(
       {
         error:
-          authCreateError?.message ??
-          "Não foi possível criar o usuário de autenticação para o agente.",
+          error instanceof Error
+            ? error.message
+            : "Não foi possível provisionar o usuário de autenticação do agente.",
       },
       { status: 400 },
     );
   }
 
-  const createdAuthUserId = createdAuthData.user.id;
+  const { data: existingAgentByAuth, error: existingAgentByAuthError } = await adminSupabase
+    .from("operational_agents")
+    .select("id")
+    .eq("auth_user_id", createdAuthUserId)
+    .maybeSingle();
+
+  if (existingAgentByAuthError) {
+    if (shouldDeleteAuthUserOnRollback) {
+      await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
+    }
+
+    return NextResponse.json(
+      { error: "Não foi possível validar o vínculo operacional do usuário." },
+      { status: 500 },
+    );
+  }
+
+  if (existingAgentByAuth) {
+    return NextResponse.json(
+      { error: "Este usuário já está vinculado a um agente operacional." },
+      { status: 409 },
+    );
+  }
 
   const { error: profileUpsertError } = await adminSupabase
     .from("profiles")
@@ -142,7 +279,9 @@ export async function POST(request: Request) {
     );
 
   if (profileUpsertError) {
-    await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
+    if (shouldDeleteAuthUserOnRollback) {
+      await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
+    }
 
     return NextResponse.json(
       { error: "Não foi possível configurar o perfil do agente." },
@@ -166,7 +305,9 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError) {
-    await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
+    if (shouldDeleteAuthUserOnRollback) {
+      await adminSupabase.auth.admin.deleteUser(createdAuthUserId);
+    }
 
     return NextResponse.json({ error: insertError.message }, { status: 400 });
   }
