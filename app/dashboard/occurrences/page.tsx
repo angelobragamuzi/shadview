@@ -71,7 +71,7 @@ export default function DashboardOccurrencesPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-2xl text-blue-950">Gestão de Ocorrências</CardTitle>
+          <CardTitle className="text-2xl text-foreground">Gestão de Ocorrências</CardTitle>
           <p className="text-sm text-muted-foreground">
             Filtros avançados, priorização por gravidade e operação de campo.
           </p>
@@ -162,7 +162,6 @@ export default function DashboardOccurrencesPage() {
               </Button>
               <Button
                 size="sm"
-                className="bg-blue-800 hover:bg-blue-700"
                 onClick={() => void loadData()}
               >
                 <Filter className="mr-2 h-4 w-4" />
@@ -198,4 +197,3 @@ export default function DashboardOccurrencesPage() {
     </div>
   );
 }
-

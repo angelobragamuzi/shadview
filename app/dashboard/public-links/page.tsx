@@ -27,29 +27,29 @@ export default function PublicLinksPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-blue-100 bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-blue-700">
+      <section className="rounded-xl border border-border bg-card p-6">
+        <p className="text-xs uppercase tracking-[0.18em] text-primary">
           Operação institucional
         </p>
-        <h1 className="mt-2 text-3xl text-blue-950">Links públicos</h1>
+        <h1 className="mt-2 text-3xl text-foreground">Links públicos</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Use estes links para divulgar os canais de abertura de demanda pela população.
         </p>
       </section>
 
-      <Card className="border-blue-100">
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-950">
-            <Link2 className="h-5 w-5 text-blue-700" />
+          <CardTitle className="flex items-center gap-2 text-foreground">
+            <Link2 className="h-5 w-5 text-primary" />
             Formulário de denúncia pública
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border bg-slate-50 p-3 text-sm text-slate-700">
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-foreground">
             {publicFormLink}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild className="bg-blue-800 hover:bg-blue-700">
+            <Button asChild>
               <Link href={PUBLIC_FORM_PATH} target="_blank" rel="noreferrer">
                 <MapPinned className="mr-2 h-4 w-4" />
                 Abrir formulário

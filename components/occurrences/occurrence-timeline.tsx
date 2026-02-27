@@ -30,12 +30,12 @@ export function OccurrenceTimeline({
           <ol className="relative ml-3 border-l border-border pl-6">
             {filteredLogs.map((log) => (
               <li key={log.id} className="mb-6 last:mb-0">
-                <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border border-blue-500 bg-blue-200" />
+                <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border border-primary/40 bg-primary/30" />
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={log.status} />
                     {log.is_internal ? (
-                      <span className="rounded bg-zinc-900 px-2 py-0.5 text-[10px] font-medium text-zinc-100">
+                      <span className="rounded bg-foreground/90 px-2 py-0.5 text-[10px] font-medium text-background">
                         Interno
                       </span>
                     ) : null}

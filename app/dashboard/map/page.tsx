@@ -49,8 +49,8 @@ export default function DashboardMapPage() {
 
   return (
     <div className="flex h-[calc(100vh-9.5rem)] min-h-[560px] flex-col gap-3">
-      <section className="rounded-lg border border-blue-100 bg-white px-4 py-3">
-        <h1 className="text-base font-semibold text-blue-950">Mapa de ocorrências</h1>
+      <section className="rounded-lg border border-border bg-card px-4 py-3">
+        <h1 className="text-base font-semibold text-foreground">Mapa de ocorrências</h1>
         <p className="text-xs text-muted-foreground">
           Use calor para densidade e ponteiros para abrir detalhes no canto superior direito.
         </p>

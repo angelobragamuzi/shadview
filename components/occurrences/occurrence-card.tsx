@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export function OccurrenceCard({ occurrence }: { occurrence: Occurrence }) {
   return (
-    <Card className="hover:border-blue-200 hover:shadow-md">
+    <Card className="hover:border-primary/35 hover:shadow-md">
       <CardHeader className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CategoryBadge category={occurrence.category} />
@@ -19,14 +19,14 @@ export function OccurrenceCard({ occurrence }: { occurrence: Occurrence }) {
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p className="line-clamp-2">{occurrence.description}</p>
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-blue-700" />
+          <MapPin className="h-4 w-4 text-primary" />
           <span>{occurrence.neighborhood ?? "Bairro não informado"}</span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span>Criada em {formatDate(occurrence.created_at)}</span>
           <Link
             href={`/occurrence/${occurrence.id}`}
-            className="font-semibold text-blue-700 hover:text-blue-900"
+            className="font-semibold text-primary transition hover:text-primary/80"
           >
             Ver protocolo
           </Link>
@@ -35,4 +35,3 @@ export function OccurrenceCard({ occurrence }: { occurrence: Occurrence }) {
     </Card>
   );
 }
-

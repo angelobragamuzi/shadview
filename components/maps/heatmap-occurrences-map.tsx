@@ -73,6 +73,7 @@ export function HeatmapOccurrencesMap({
   const occurrencesRef = useRef(occurrences);
   const hasAutoSelectedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const [selectedOccurrence, setSelectedOccurrence] = useState<OccurrenceWithRelations | null>(
     null,
   );
@@ -132,6 +133,7 @@ export function HeatmapOccurrencesMap({
           });
         }
 
+        setMapReady(true);
         fitMapToCoordinates(
           mapRef.current,
           occurrencesRef.current.map((item) => ({
@@ -150,6 +152,7 @@ export function HeatmapOccurrencesMap({
 
     return () => {
       mounted = false;
+      setMapReady(false);
       clearMarkers();
       heatmapRef.current?.setMap(null);
       heatmapRef.current = null;
@@ -189,6 +192,10 @@ export function HeatmapOccurrencesMap({
   }, [mode, occurrences, selectedOccurrence]);
 
   useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+
     const map = mapRef.current;
     const heatmap = heatmapRef.current;
     if (!map || !heatmap) {
@@ -251,7 +258,7 @@ export function HeatmapOccurrencesMap({
         lng: item.longitude,
       })),
     );
-  }, [heatPoints, mode, occurrences]);
+  }, [heatPoints, mode, occurrences, mapReady]);
 
   if (error) {
     return (
@@ -269,9 +276,9 @@ export function HeatmapOccurrencesMap({
         <div ref={containerRef} className="h-full w-full rounded-xl" />
 
         {mode === "markers" && selectedOccurrence ? (
-          <aside className="absolute right-3 top-3 z-20 w-[300px] max-w-[calc(100%-1.5rem)] rounded-lg border bg-white/95 p-3 shadow-lg backdrop-blur">
+          <aside className="absolute right-3 top-3 z-20 w-[300px] max-w-[calc(100%-1.5rem)] rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="line-clamp-2 text-sm font-semibold text-blue-950">
+              <h3 className="line-clamp-2 text-sm font-semibold text-foreground">
                 {selectedOccurrence.title}
               </h3>
               <button
@@ -288,19 +295,19 @@ export function HeatmapOccurrencesMap({
             </p>
             <div className="mt-3 space-y-1 text-xs">
               <p>
-                <span className="font-medium text-blue-950">Categoria:</span>{" "}
+                <span className="font-medium text-foreground">Categoria:</span>{" "}
                 {CATEGORY_LABELS[selectedOccurrence.category]}
               </p>
               <p>
-                <span className="font-medium text-blue-950">Status:</span>{" "}
+                <span className="font-medium text-foreground">Status:</span>{" "}
                 {STATUS_LABELS[selectedOccurrence.status]}
               </p>
               <p>
-                <span className="font-medium text-blue-950">Bairro:</span>{" "}
+                <span className="font-medium text-foreground">Bairro:</span>{" "}
                 {selectedOccurrence.neighborhood ?? "Não informado"}
               </p>
               <p>
-                <span className="font-medium text-blue-950">Abertura:</span>{" "}
+                <span className="font-medium text-foreground">Abertura:</span>{" "}
                 {formatDate(selectedOccurrence.created_at)}
               </p>
             </div>
@@ -308,7 +315,7 @@ export function HeatmapOccurrencesMap({
               href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedOccurrence.latitude},${selectedOccurrence.longitude}`}
               target="_blank"
               rel="noreferrer"
-              className="mt-3 inline-flex w-full justify-center rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-800 transition hover:bg-blue-50"
+              className="mt-3 inline-flex w-full justify-center rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-primary transition hover:bg-accent"
             >
               Ver no Street View
             </a>

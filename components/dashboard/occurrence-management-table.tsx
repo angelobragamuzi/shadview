@@ -112,7 +112,7 @@ export function OccurrenceManagementTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border bg-white">
+      <div className="overflow-hidden rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -137,7 +137,7 @@ export function OccurrenceManagementTable({
               sortedOccurrences.map((occurrence) => (
                 <TableRow key={occurrence.id}>
                   <TableCell>
-                    <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">
+                    <span className="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300">
                       {calculatePriorityScore(occurrence)}
                     </span>
                   </TableCell>
@@ -289,7 +289,7 @@ export function OccurrenceManagementTable({
 
               <Button
                 type="submit"
-                className="w-full bg-blue-800 hover:bg-blue-700"
+                className="w-full"
                 disabled={form.formState.isSubmitting}
               >
                 <Save className="mr-2 h-4 w-4" />
@@ -302,4 +302,3 @@ export function OccurrenceManagementTable({
     </>
   );
 }
-

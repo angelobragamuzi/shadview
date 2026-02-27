@@ -96,15 +96,15 @@ export function NewOccurrenceForm() {
   };
 
   return (
-    <Card className="border-blue-100 shadow-lg shadow-blue-100/30">
+    <Card className="shadow-lg shadow-black/5 dark:shadow-black/30">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl font-semibold text-blue-950">
+        <CardTitle className="text-2xl font-semibold text-foreground">
           Registrar nova ocorrência
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           Formulário público do denunciante com categoria e endereço.
         </p>
-        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
           Não é necessário login para enviar denúncia.
         </p>
       </CardHeader>
@@ -187,7 +187,7 @@ export function NewOccurrenceForm() {
             <Separator />
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-blue-950">Endereço da ocorrência</p>
+              <p className="text-sm font-medium text-foreground">Endereço da ocorrência</p>
               <p className="text-xs text-muted-foreground">
                 Informe o CEP e número. O restante do endereço será preenchido automaticamente.
               </p>
@@ -309,7 +309,7 @@ export function NewOccurrenceForm() {
             <Button
               type="submit"
               size="lg"
-              className="w-full bg-blue-800 hover:bg-blue-700"
+              className="w-full"
               disabled={form.formState.isSubmitting}
             >
               <Send className="mr-2 h-4 w-4" />

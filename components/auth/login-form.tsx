@@ -78,7 +78,7 @@ export function LoginForm() {
           )}
         />
         <Button
-          className="w-full bg-blue-800 hover:bg-blue-700"
+          className="w-full"
           type="submit"
           disabled={form.formState.isSubmitting}
         >

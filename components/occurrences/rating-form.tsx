@@ -72,7 +72,7 @@ export function RatingForm({
                       </FormControl>
                       <FormLabel
                         htmlFor={`rating-${score}`}
-                        className="flex h-10 cursor-pointer items-center justify-center rounded-md border text-sm font-medium data-[selected=true]:bg-blue-800 data-[selected=true]:text-white"
+                        className="flex h-10 cursor-pointer items-center justify-center rounded-md border text-sm font-medium transition data-[selected=true]:border-primary data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground"
                         data-selected={field.value === score}
                       >
                         {score}
@@ -106,7 +106,7 @@ export function RatingForm({
 
         <Button
           type="submit"
-          className="w-full bg-blue-800 hover:bg-blue-700"
+          className="w-full"
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting ? "Enviando..." : "Enviar avaliação"}

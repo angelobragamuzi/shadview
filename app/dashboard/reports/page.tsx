@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/occurrence-utils";
 import { fetchDashboardOccurrences } from "@/services/occurrence-service";
 import { exportOccurrencesCsv, exportOccurrencesPdf } from "@/services/report-service";
@@ -52,7 +53,7 @@ export default function DashboardReportsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-2xl text-blue-950">Relatórios executivos</CardTitle>
+          <CardTitle className="text-2xl text-foreground">Relatórios executivos</CardTitle>
           <p className="text-sm text-muted-foreground">
             Exporte dados em CSV/PDF e acompanhe ranking de bairros mais afetados.
           </p>
@@ -73,7 +74,7 @@ export default function DashboardReportsPage() {
                 setFilters((previous) => ({ ...previous, to: event.target.value }))
               }
             />
-            <Button className="bg-blue-800 hover:bg-blue-700" onClick={() => void loadData()}>
+            <Button onClick={() => void loadData()}>
               <Download className="mr-2 h-4 w-4" />
               Atualizar período
             </Button>
@@ -128,7 +129,7 @@ export default function DashboardReportsPage() {
                         {occurrence.id.slice(0, 10)}
                       </TableCell>
                       <TableCell>{occurrence.category}</TableCell>
-                      <TableCell>{occurrence.status}</TableCell>
+                      <TableCell>{STATUS_LABELS[occurrence.status]}</TableCell>
                       <TableCell>{occurrence.neighborhood ?? "Não informado"}</TableCell>
                       <TableCell>{formatDate(occurrence.created_at)}</TableCell>
                     </TableRow>
@@ -142,7 +143,7 @@ export default function DashboardReportsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Trophy className="mr-2 h-5 w-5 text-amber-500" />
+              <Trophy className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
               Ranking de bairros
             </CardTitle>
           </CardHeader>
@@ -158,7 +159,7 @@ export default function DashboardReportsPage() {
                   <p className="text-sm font-medium">
                     {index + 1}. {item.name}
                   </p>
-                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-800">
+                  <span className="rounded bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
                     {item.total}
                   </span>
                 </div>
@@ -170,4 +171,3 @@ export default function DashboardReportsPage() {
     </div>
   );
 }
-

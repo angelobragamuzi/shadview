@@ -15,7 +15,7 @@ export function SignOutButton() {
     try {
       setLoading(true);
       await signOut();
-      toast.success("Sessao encerrada com sucesso.");
+      toast.success("Sessão encerrada com sucesso.");
       router.push("/");
       router.refresh();
     } catch (error) {
@@ -39,4 +39,3 @@ export function SignOutButton() {
     </Button>
   );
 }
-

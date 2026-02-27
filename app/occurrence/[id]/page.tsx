@@ -72,11 +72,11 @@ export default function OccurrenceDetailPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-10 md:px-6">
         <Card>
           <CardContent className="space-y-3 p-6 text-center">
-            <p className="text-lg font-semibold text-blue-950">Protocolo não encontrado</p>
+            <p className="text-lg font-semibold text-foreground">Protocolo não encontrado</p>
             <p className="text-sm text-muted-foreground">
               Verifique o identificador ou abra uma nova ocorrência.
             </p>
-            <Button className="bg-blue-800 hover:bg-blue-700" asChild>
+            <Button asChild>
               <Link href="/occurrence">Registrar nova ocorrência</Link>
             </Button>
           </CardContent>
@@ -100,11 +100,11 @@ export default function OccurrenceDetailPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 md:px-6 md:py-10">
-      <section className="rounded-xl border border-blue-100 bg-white p-6">
+      <section className="rounded-xl border border-border bg-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-3">
-            <p className="text-xs uppercase tracking-[0.14em] text-blue-700">Protocolo</p>
-            <h1 className="text-3xl text-blue-950">{occurrence.title}</h1>
+            <p className="text-xs uppercase tracking-[0.14em] text-primary">Protocolo</p>
+            <h1 className="text-3xl text-foreground">{occurrence.title}</h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
               {occurrence.description}
             </p>
@@ -118,19 +118,19 @@ export default function OccurrenceDetailPage() {
           </div>
           <div className="space-y-2 text-sm">
             <p>
-              <span className="font-semibold text-blue-950">Criada em:</span>{" "}
+              <span className="font-semibold text-foreground">Criada em:</span>{" "}
               {formatDate(occurrence.created_at)}
             </p>
             <p>
-              <span className="font-semibold text-blue-950">Atualizada em:</span>{" "}
+              <span className="font-semibold text-foreground">Atualizada em:</span>{" "}
               {formatDate(occurrence.updated_at)}
             </p>
             <p>
-              <span className="font-semibold text-blue-950">Bairro:</span>{" "}
+              <span className="font-semibold text-foreground">Bairro:</span>{" "}
               {occurrence.neighborhood ?? "Não informado"}
             </p>
             <p>
-              <span className="font-semibold text-blue-950">SLA:</span>{" "}
+              <span className="font-semibold text-foreground">SLA:</span>{" "}
               {occurrence.sla_deadline ? formatDate(occurrence.sla_deadline) : "Não definido"}
             </p>
           </div>
@@ -166,7 +166,7 @@ export default function OccurrenceDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center text-lg">
-                  <Star className="mr-2 h-5 w-5 text-amber-500" />
+                  <Star className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
                   Avaliar atendimento
                 </CardTitle>
               </CardHeader>
@@ -265,4 +265,3 @@ export default function OccurrenceDetailPage() {
     </div>
   );
 }
-

@@ -12,17 +12,17 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-blue-100/80 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-950/85">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-4 md:px-6">
         <Link href="/occurrence" className="flex items-center gap-3">
-          <div className="rounded-lg bg-blue-900 p-2 text-white">
+          <div className="rounded-lg bg-primary p-2 text-primary-foreground">
             <Building2 className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">
+            <p className="text-xs uppercase tracking-[0.2em] text-primary">
               ShadBoard
             </p>
-            <p className="text-sm font-semibold text-blue-950 dark:text-blue-50">
+            <p className="text-sm font-semibold text-foreground">
               Gestão Urbana Inteligente
             </p>
           </div>

@@ -33,7 +33,7 @@ export function RegisterForm() {
   const onSubmit = async (values: RegisterFormValues) => {
     try {
       await signUpWithEmail(values);
-      toast.success("Conta criada. Verifique seu email para confirmacao.");
+      toast.success("Conta criada. Verifique seu email para confirmação.");
       router.push("/login");
     } catch (error) {
       const message =
@@ -85,7 +85,7 @@ export function RegisterForm() {
           )}
         />
         <Button
-          className="w-full bg-blue-800 hover:bg-blue-700"
+          className="w-full"
           type="submit"
           disabled={form.formState.isSubmitting}
         >
@@ -93,8 +93,8 @@ export function RegisterForm() {
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          Ja possui conta?{" "}
-          <Link href="/login" className="font-medium text-blue-700">
+          Já possui conta?{" "}
+          <Link href="/login" className="font-medium text-primary hover:text-primary/80">
             Fazer login
           </Link>
         </p>
@@ -102,4 +102,3 @@ export function RegisterForm() {
     </Form>
   );
 }
-

@@ -58,6 +58,7 @@ export function PublicOccurrencesMap({
   const markersRef = useRef<google.maps.Marker[]>([]);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -80,6 +81,8 @@ export function PublicOccurrencesMap({
           });
           infoWindowRef.current = new googleApi.maps.InfoWindow();
         }
+
+        setMapReady(true);
       } catch (mapError) {
         const message =
           mapError instanceof Error
@@ -93,6 +96,7 @@ export function PublicOccurrencesMap({
 
     return () => {
       mounted = false;
+      setMapReady(false);
       for (const marker of markersRef.current) {
         google.maps.event.clearInstanceListeners(marker);
         marker.setMap(null);
@@ -102,6 +106,10 @@ export function PublicOccurrencesMap({
   }, []);
 
   useEffect(() => {
+    if (!mapReady) {
+      return;
+    }
+
     const map = mapRef.current;
     if (!map) {
       return;
@@ -157,7 +165,7 @@ export function PublicOccurrencesMap({
     } else {
       map.fitBounds(bounds, 48);
     }
-  }, [occurrences]);
+  }, [occurrences, mapReady]);
 
   if (error) {
     return (

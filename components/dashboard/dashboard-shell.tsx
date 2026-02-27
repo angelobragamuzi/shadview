@@ -7,11 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/types";
-import { ClipboardList, Home, Link2, Map, MapPinned, Menu, ScrollText } from "lucide-react";
+import {
+  ClipboardList,
+  Columns2,
+  Home,
+  Link2,
+  Map,
+  MapPinned,
+  Menu,
+  ScrollText,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const navigation = [
   {
@@ -41,19 +51,38 @@ const navigation = [
   },
 ];
 
-function Sidebar({ role }: { role: UserRole }) {
+function Sidebar({
+  role,
+  collapsed = false,
+}: {
+  role: UserRole;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col bg-blue-950 text-blue-50">
-      <div className="px-6 py-5">
-        <p className="text-xs uppercase tracking-[0.2em] text-blue-200">ShadBoard</p>
-        <h1 className="mt-1 text-xl font-semibold">Gestão Urbana</h1>
-        <Badge className="mt-3 bg-blue-100 text-blue-900 hover:bg-blue-100">
-          {ROLE_LABELS[role]}
-        </Badge>
+    <div className="flex h-full flex-col bg-blue-950 text-blue-50 transition-[padding] duration-300 dark:bg-slate-900 dark:text-slate-100">
+      <div className={cn("py-5", collapsed ? "px-3" : "px-6")}>
+        <div className={cn("flex items-start", collapsed ? "justify-center" : "justify-between")}>
+          <div className={cn("min-w-0", collapsed && "text-center")}>
+            <p className="text-xs uppercase tracking-[0.2em] text-blue-200 dark:text-slate-300">
+              {collapsed ? "SB" : "ShadBoard"}
+            </p>
+            <div
+              className={cn(
+                "overflow-hidden transition-all duration-200",
+                collapsed ? "mt-0 max-h-0 opacity-0" : "mt-1 max-h-16 opacity-100",
+              )}
+            >
+              <h1 className="text-xl font-semibold">Gestão Urbana</h1>
+              <Badge className="mt-3 border border-blue-100 bg-blue-100 text-blue-900 hover:bg-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-800">
+                {ROLE_LABELS[role]}
+              </Badge>
+            </div>
+          </div>
+        </div>
       </div>
-      <Separator className="bg-blue-900" />
+      <Separator className="bg-blue-900 dark:bg-slate-800" />
       <nav className="space-y-1 p-3">
         {navigation.map((item) => {
           const Icon = item.icon;
@@ -62,25 +91,28 @@ function Sidebar({ role }: { role: UserRole }) {
             <Link
               key={item.href}
               href={item.href}
+              title={collapsed ? item.title : undefined}
               className={cn(
-                "flex items-center rounded-md px-3 py-2 text-sm transition",
+                "flex items-center rounded-md py-2 text-sm transition-all duration-200",
+                collapsed ? "justify-center px-2" : "px-3",
                 active
-                  ? "bg-blue-800 text-white"
-                  : "text-blue-100 hover:bg-blue-900/70 hover:text-white",
+                  ? "bg-blue-800 text-white dark:bg-slate-800"
+                  : "text-blue-100 hover:bg-blue-900/70 hover:text-white dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
               )}
             >
-              <Icon className="mr-2 h-4 w-4" />
-              {item.title}
+              <Icon className="h-4 w-4 shrink-0" />
+              <span
+                className={cn(
+                  "overflow-hidden whitespace-nowrap transition-all duration-200",
+                  collapsed ? "max-w-0 opacity-0" : "ml-2 max-w-[140px] opacity-100",
+                )}
+              >
+                {item.title}
+              </span>
             </Link>
           );
         })}
       </nav>
-      <div className="mt-auto p-3">
-        <div className="rounded-lg border border-blue-800 bg-blue-900/50 p-3 text-xs text-blue-200">
-          <p className="font-medium text-blue-50">Centro de controle urbano</p>
-          <p className="mt-1">SLA, priorização e monitoramento em tempo real.</p>
-        </div>
-      </div>
     </div>
   );
 }
@@ -96,15 +128,22 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const isDashboardHome = pathname === "/dashboard";
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-100">
-      <div className="grid h-screen md:grid-cols-[280px_1fr]">
-        <aside className="hidden md:block">
-          <Sidebar role={role} />
+    <div className="h-dvh overflow-hidden bg-background">
+      <div className="flex h-dvh">
+        <aside
+          className={cn(
+            "hidden shrink-0 md:block",
+            "transition-[width] duration-300 ease-in-out",
+            isSidebarCollapsed ? "w-[84px]" : "w-[280px]",
+          )}
+        >
+          <Sidebar role={role} collapsed={isSidebarCollapsed} />
         </aside>
-        <div className="flex min-w-0 min-h-0 flex-col">
-          <header className="sticky top-0 z-30 border-b bg-white/90 backdrop-blur">
+        <div className="flex min-w-0 min-h-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto flex h-16 w-full max-w-[1600px] items-center justify-between px-4 md:px-6">
               <div className="flex items-center gap-3">
                 <Sheet>
@@ -117,16 +156,27 @@ export function DashboardShell({
                     <Sidebar role={role} />
                   </SheetContent>
                 </Sheet>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="hidden h-9 w-9 border-primary/40 bg-background text-primary shadow-sm transition hover:bg-primary/10 md:inline-flex"
+                  onClick={() => setIsSidebarCollapsed((previous) => !previous)}
+                  aria-label={isSidebarCollapsed ? "Expandir menu lateral" : "Minimizar menu lateral"}
+                >
+                  <Columns2 className="h-4 w-4" />
+                </Button>
                 <div>
                   <p className="text-sm text-muted-foreground">Painel Executivo</p>
-                  <p className="text-sm font-semibold text-blue-950">{fullName}</p>
+                  <p className="text-sm font-semibold text-foreground">{fullName}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
                   <Link href="/occurrence" target="_blank" rel="noreferrer">
                     <MapPinned className="mr-2 h-4 w-4" />
-                    Formulário público
+                    <span className="hidden md:inline">Formulário público</span>
+                    <span className="md:hidden">Público</span>
                   </Link>
                 </Button>
                 <ThemeToggle />
@@ -136,8 +186,8 @@ export function DashboardShell({
           </header>
           <main
             className={cn(
-              "mx-auto w-full max-w-[1600px] flex-1 min-h-0 px-4 py-4 md:px-6",
-              isDashboardHome ? "overflow-y-auto xl:overflow-hidden" : "overflow-y-auto",
+              "mx-auto w-full max-w-[1600px] flex-1 min-h-0 px-3 py-3 sm:px-4 sm:py-4 md:px-6",
+              isDashboardHome ? "overflow-y-auto 2xl:overflow-hidden" : "overflow-y-auto",
             )}
           >
             {children}
@@ -147,4 +197,3 @@ export function DashboardShell({
     </div>
   );
 }
-
