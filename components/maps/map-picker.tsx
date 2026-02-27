@@ -2,7 +2,9 @@
 
 import { loadGoogleMapsApi } from "@/lib/google-maps";
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM } from "@/lib/constants";
+import { getMapThemeFromDocument, getMapThemeStyles } from "@/lib/map-theme";
 import type { Coordinates } from "@/services/geolocation-service";
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
 export function MapPicker({
@@ -14,12 +16,15 @@ export function MapPicker({
   onChange: (value: Coordinates) => void;
   className?: string;
 }) {
+  const { resolvedTheme } = useTheme();
+  const mapTheme = resolvedTheme === "dark" ? "dark" : "light";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
+  const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +53,9 @@ export function MapPicker({
             streetViewControl: false,
             fullscreenControl: false,
             clickableIcons: false,
+            styles: getMapThemeStyles(getMapThemeFromDocument()),
           });
+          setMapReady(true);
 
           clickListenerRef.current = mapRef.current.addListener(
             "click",
@@ -81,6 +88,16 @@ export function MapPicker({
       clickListenerRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    mapRef.current.setOptions({
+      styles: getMapThemeStyles(mapTheme),
+    });
+  }, [mapTheme, mapReady]);
 
   useEffect(() => {
     const map = mapRef.current;

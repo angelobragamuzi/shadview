@@ -6,13 +6,14 @@ import { CategoryBadge } from "@/components/occurrences/category-badge";
 import { StatusBadge } from "@/components/occurrences/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealtimeOccurrence } from "@/hooks/use-realtime-occurrence";
 import { formatDate } from "@/lib/occurrence-utils";
 import { fetchOccurrenceById } from "@/services/occurrence-service";
 import type { OccurrenceWithRelations } from "@/types";
-import { ExternalLink, LocateFixed, Star } from "lucide-react";
+import { Copy, ExternalLink, LocateFixed, Star } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -62,7 +63,7 @@ export default function OccurrenceDetailPage() {
   if (loading) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-10 md:px-6">
-        <p className="text-sm text-muted-foreground">Carregando protocolo...</p>
+        <LoadingState label="Carregando protocolo..." className="min-h-[240px]" />
       </div>
     );
   }
@@ -98,6 +99,24 @@ export default function OccurrenceDetailPage() {
     occurrence.user_id === user.id &&
     (occurrence.ratings?.length ?? 0) === 0;
 
+  const handleCopyProtocol = async () => {
+    try {
+      await navigator.clipboard.writeText(occurrence.id);
+      toast.success("Protocolo copiado.");
+    } catch {
+      toast.error("Não foi possível copiar o protocolo.");
+    }
+  };
+
+  const handleCopyTrackingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/occurrence/${occurrence.id}`);
+      toast.success("Link de acompanhamento copiado.");
+    } catch {
+      toast.error("Não foi possível copiar o link.");
+    }
+  };
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 md:px-6 md:py-10">
       <section className="rounded-xl border border-border bg-card p-6">
@@ -114,6 +133,14 @@ export default function OccurrenceDetailPage() {
               <span className="rounded border bg-muted/60 px-2 py-1 text-xs text-muted-foreground">
                 {occurrence.id}
               </span>
+              <Button variant="outline" size="sm" onClick={handleCopyProtocol}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar protocolo
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCopyTrackingLink}>
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Copiar link
+              </Button>
             </div>
           </div>
           <div className="space-y-2 text-sm">

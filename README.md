@@ -4,7 +4,7 @@ Plataforma inteligente de gestão de demandas urbanas para prefeituras e órgão
 
 ## Stack
 
-- Next.js 14 (App Router)
+- Next.js 16 (App Router)
 - TypeScript
 - Tailwind CSS + shadcn/ui
 - Supabase (Auth, Database, Storage, Realtime)
@@ -55,11 +55,29 @@ Crie um arquivo `.env.local` (ou `.env`) na raiz do projeto com:
 NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=SEU_SUPABASE_ANON_KEY
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=SUA_GOOGLE_MAPS_API_KEY
+SUPABASE_SERVICE_ROLE_KEY=SUA_SERVICE_ROLE_KEY
 ```
 
 Arquivo de exemplo:
 
 - `.env.example`
+
+## API do app de agentes (MVP)
+
+Endpoints implementados em `app/api/agent/*`:
+
+- `GET /api/agent/me`
+- `POST /api/agent/change-password`
+- `GET /api/agent/occurrences?status=&page=&limit=`
+- `GET /api/agent/occurrences/:id`
+- `PATCH /api/agent/occurrences/:id` (iniciar execução)
+- `POST /api/agent/occurrences/:id/finalize` (multipart/form-data com `images`)
+- `GET /api/agent/notifications?page=&limit=`
+- `POST /api/agent/notifications` (marcar notificações como lidas)
+
+Migration incremental do app de agentes:
+
+- `supabase/migration_agent_app_support.sql`
 
 ## Setup local
 

@@ -1,13 +1,24 @@
-﻿"use client";
+"use client";
 
 import { Button } from "@/components/ui/button";
+import type { ButtonProps } from "@/components/ui/button";
 import { signOut } from "@/services/auth-service";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function SignOutButton() {
+export function SignOutButton({
+  className,
+  variant = "outline",
+  size = "sm",
+  showLabel = true,
+}: {
+  className?: string;
+  variant?: ButtonProps["variant"];
+  size?: ButtonProps["size"];
+  showLabel?: boolean;
+}) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -29,13 +40,16 @@ export function SignOutButton() {
 
   return (
     <Button
-      variant="outline"
-      size="sm"
+      variant={variant}
+      size={size}
+      className={className}
       disabled={loading}
       onClick={handleSignOut}
+      aria-label="Sair"
+      title={showLabel ? undefined : "Sair"}
     >
-      <LogOut className="mr-2 h-4 w-4" />
-      {loading ? "Saindo..." : "Sair"}
+      <LogOut className={showLabel ? "mr-2 h-4 w-4" : "h-4 w-4"} />
+      {showLabel ? (loading ? "Saindo..." : "Sair") : null}
     </Button>
   );
 }

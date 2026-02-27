@@ -72,7 +72,7 @@
 
   body {
     @apply min-h-screen bg-background text-foreground;
-    font-family: var(--font-public-sans), sans-serif;
+    font-family: var(--font-ibm-plex-sans), sans-serif;
     background-image: var(--background-pattern);
   }
 
@@ -80,7 +80,7 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-source-serif), serif;
+    font-family: var(--font-ibm-plex-serif), serif;
   }
 }
 

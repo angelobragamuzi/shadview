@@ -11,6 +11,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -30,16 +31,20 @@ import {
   lookupAddressByPostalCode,
 } from "@/services/geolocation-service";
 import { createOccurrence } from "@/services/occurrence-service";
+import { uploadOccurrenceImages } from "@/services/upload-service";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Search, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+
+const MAX_REPORT_IMAGES = 5;
 
 export function NewOccurrenceForm() {
   const router = useRouter();
   const [loadingPostalCode, setLoadingPostalCode] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
 
   const form = useForm<CreateOccurrenceFormValues>({
     resolver: zodResolver(createOccurrenceSchema),
@@ -86,13 +91,38 @@ export function NewOccurrenceForm() {
   const onSubmit = async (values: CreateOccurrenceFormValues) => {
     try {
       const occurrence = await createOccurrence(values, null);
-      toast.success("Ocorrência registrada com sucesso.");
+
+      if (selectedImages.length > 0) {
+        try {
+          await uploadOccurrenceImages({
+            files: selectedImages,
+            occurrenceId: occurrence.id,
+            imageType: "report",
+          });
+          toast.success("Ocorrência registrada com sucesso e fotos anexadas.");
+        } catch {
+          toast.warning("Ocorrência registrada, mas houve falha no envio das fotos.");
+        }
+      } else {
+        toast.success("Ocorrência registrada com sucesso.");
+      }
+
       router.push(`/occurrence/${occurrence.id}`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Falha ao registrar ocorrência.";
       toast.error(message);
     }
+  };
+
+  const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+
+    if (files.length > MAX_REPORT_IMAGES) {
+      toast.error(`Você pode enviar no máximo ${MAX_REPORT_IMAGES} fotos por ocorrência.`);
+    }
+
+    setSelectedImages(files.slice(0, MAX_REPORT_IMAGES));
   };
 
   return (
@@ -143,6 +173,26 @@ export function NewOccurrenceForm() {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="occurrence-images">Fotos da ocorrência (opcional)</Label>
+                <Input
+                  id="occurrence-images"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelection}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Envie até {MAX_REPORT_IMAGES} fotos para facilitar a análise da equipe.
+                </p>
+                {selectedImages.length > 0 ? (
+                  <p className="text-xs font-medium text-foreground">
+                    {selectedImages.length} arquivo(s) selecionado(s):{" "}
+                    {selectedImages.map((file) => file.name).join(", ")}
+                  </p>
+                ) : null}
+              </div>
 
               <FormField
                 control={form.control}

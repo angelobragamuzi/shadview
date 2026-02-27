@@ -7,6 +7,12 @@ export type OccurrenceImage =
 export type OccurrenceLog =
   Database["public"]["Tables"]["occurrence_logs"]["Row"];
 export type Rating = Database["public"]["Tables"]["ratings"]["Row"];
+export type Institution = Database["public"]["Tables"]["institutions"]["Row"];
+export type Team = Database["public"]["Tables"]["teams"]["Row"];
+export type OperationalAgent =
+  Database["public"]["Tables"]["operational_agents"]["Row"];
+export type OccurrenceAssignment =
+  Database["public"]["Tables"]["occurrence_assignments"]["Row"];
 
 export type UserRole = Database["public"]["Enums"]["user_role"];
 export type OccurrenceCategory = Database["public"]["Enums"]["occurrence_category"];
@@ -17,6 +23,13 @@ export type OccurrenceImageType =
 export interface OccurrenceWithRelations extends Occurrence {
   reporter?: Pick<Profile, "id" | "full_name" | "role"> | null;
   assignee?: Pick<Profile, "id" | "full_name" | "role"> | null;
+  assignment?:
+    | (OccurrenceAssignment & {
+        institution?: Pick<Institution, "id" | "name" | "acronym"> | null;
+        team?: Pick<Team, "id" | "name"> | null;
+        agent?: Pick<OperationalAgent, "id" | "full_name"> | null;
+      })
+    | null;
   occurrence_images?: OccurrenceImage[];
   occurrence_logs?: OccurrenceLog[];
   ratings?: Rating[];

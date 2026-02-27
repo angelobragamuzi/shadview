@@ -83,6 +83,60 @@ create table if not exists public.ratings (
   constraint ratings_occurrence_user_unique unique (occurrence_id, user_id)
 );
 
+create table if not exists public.institutions (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(trim(name)) between 3 and 160),
+  acronym text check (acronym is null or char_length(trim(acronym)) between 2 and 20),
+  contact_email text,
+  contact_phone text,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.teams (
+  id uuid primary key default gen_random_uuid(),
+  institution_id uuid not null references public.institutions(id) on delete cascade,
+  name text not null check (char_length(trim(name)) between 3 and 120),
+  description text,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.operational_agents (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null check (char_length(trim(full_name)) between 3 and 160),
+  email text,
+  phone text,
+  institution_id uuid references public.institutions(id) on delete set null,
+  team_id uuid references public.teams(id) on delete set null,
+  auth_user_id uuid unique references public.profiles(id) on delete set null,
+  is_active boolean not null default true,
+  must_change_password boolean not null default true,
+  last_login_at timestamptz,
+  last_notification_read_at timestamptz,
+  created_by uuid references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.occurrence_assignments (
+  id uuid primary key default gen_random_uuid(),
+  occurrence_id uuid not null references public.occurrences(id) on delete cascade unique,
+  institution_id uuid references public.institutions(id) on delete set null,
+  team_id uuid references public.teams(id) on delete set null,
+  agent_id uuid references public.operational_agents(id) on delete set null,
+  assigned_by uuid references public.profiles(id) on delete set null,
+  notes text,
+  assigned_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint occurrence_assignments_any_target_check
+    check (
+      institution_id is not null
+      or team_id is not null
+      or agent_id is not null
+    )
+);
+
 create index if not exists occurrences_created_at_idx on public.occurrences (created_at desc);
 create index if not exists occurrences_status_idx on public.occurrences (status);
 create index if not exists occurrences_category_idx on public.occurrences (category);
@@ -91,6 +145,15 @@ create index if not exists occurrences_user_id_idx on public.occurrences (user_i
 create index if not exists occurrence_logs_occurrence_id_idx on public.occurrence_logs (occurrence_id);
 create index if not exists occurrence_images_occurrence_id_idx on public.occurrence_images (occurrence_id);
 create index if not exists ratings_occurrence_id_idx on public.ratings (occurrence_id);
+create index if not exists institutions_name_idx on public.institutions (name);
+create index if not exists teams_institution_id_idx on public.teams (institution_id);
+create index if not exists operational_agents_institution_id_idx on public.operational_agents (institution_id);
+create index if not exists operational_agents_team_id_idx on public.operational_agents (team_id);
+create index if not exists operational_agents_auth_user_id_idx on public.operational_agents (auth_user_id);
+create index if not exists occurrence_assignments_occurrence_id_idx on public.occurrence_assignments (occurrence_id);
+create index if not exists occurrence_assignments_institution_id_idx on public.occurrence_assignments (institution_id);
+create index if not exists occurrence_assignments_team_id_idx on public.occurrence_assignments (team_id);
+create index if not exists occurrence_assignments_agent_id_idx on public.occurrence_assignments (agent_id);
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -105,6 +168,11 @@ $$;
 drop trigger if exists occurrences_set_updated_at on public.occurrences;
 create trigger occurrences_set_updated_at
 before update on public.occurrences
+for each row execute function public.set_updated_at();
+
+drop trigger if exists occurrence_assignments_set_updated_at on public.occurrence_assignments;
+create trigger occurrence_assignments_set_updated_at
+before update on public.occurrence_assignments
 for each row execute function public.set_updated_at();
 
 create or replace function public.handle_new_user()
@@ -148,6 +216,34 @@ security definer
 set search_path = public
 as $$
   select case when public.current_role() = 'gestor' then true else false end;
+$$;
+
+create or replace function public.current_operational_agent_id()
+returns uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select id
+  from public.operational_agents
+  where auth_user_id = auth.uid()
+  limit 1;
+$$;
+
+create or replace function public.is_occurrence_assigned_to_current_agent(occurrence_uuid uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.occurrence_assignments oa
+    where oa.occurrence_id = occurrence_uuid
+      and oa.agent_id = public.current_operational_agent_id()
+  );
 $$;
 
 create or replace function public.get_public_occurrences(limit_count int default 300)
@@ -309,6 +405,8 @@ for each row execute function public.create_initial_occurrence_log();
 
 grant execute on function public.current_role() to authenticated;
 grant execute on function public.can_manage_occurrence(uuid) to authenticated;
+grant execute on function public.current_operational_agent_id() to authenticated;
+grant execute on function public.is_occurrence_assigned_to_current_agent(uuid) to authenticated;
 grant execute on function public.get_public_occurrences(int) to anon, authenticated;
 grant execute on function public.get_public_occurrence(uuid) to anon, authenticated;
 grant execute on function public.get_public_occurrence_logs(uuid) to anon, authenticated;
@@ -319,6 +417,10 @@ alter table public.occurrences enable row level security;
 alter table public.occurrence_images enable row level security;
 alter table public.occurrence_logs enable row level security;
 alter table public.ratings enable row level security;
+alter table public.institutions enable row level security;
+alter table public.teams enable row level security;
+alter table public.operational_agents enable row level security;
+alter table public.occurrence_assignments enable row level security;
 
 drop policy if exists profiles_select_own on public.profiles;
 create policy profiles_select_own
@@ -361,10 +463,19 @@ using (auth.uid() = user_id);
 drop policy if exists occurrences_select_agent on public.occurrences;
 drop policy if exists occurrences_select_admin on public.occurrences;
 drop policy if exists occurrences_select_gestor on public.occurrences;
+drop policy if exists occurrences_select_agent_assigned on public.occurrences;
 create policy occurrences_select_gestor
 on public.occurrences
 for select
 using (public.current_role() = 'gestor');
+
+create policy occurrences_select_agent_assigned
+on public.occurrences
+for select
+using (
+  public.current_role() = 'agent'
+  and public.is_occurrence_assigned_to_current_agent(id)
+);
 
 drop policy if exists occurrences_update_manager on public.occurrences;
 create policy occurrences_update_manager
@@ -375,6 +486,20 @@ using (
 )
 with check (
   public.current_role() = 'gestor'
+);
+
+drop policy if exists occurrences_update_agent_assigned on public.occurrences;
+create policy occurrences_update_agent_assigned
+on public.occurrences
+for update
+using (
+  public.current_role() = 'agent'
+  and public.is_occurrence_assigned_to_current_agent(id)
+)
+with check (
+  public.current_role() = 'agent'
+  and status in ('em_execucao', 'resolvido')
+  and public.is_occurrence_assigned_to_current_agent(id)
 );
 
 drop policy if exists occurrences_delete_admin on public.occurrences;
@@ -396,6 +521,10 @@ using (
         o.user_id = auth.uid()
         or public.can_manage_occurrence(o.id)
         or public.current_role() = 'gestor'
+        or (
+          public.current_role() = 'agent'
+          and public.is_occurrence_assigned_to_current_agent(o.id)
+        )
       )
   )
 );
@@ -415,8 +544,25 @@ with check (
         or o.user_id = auth.uid()
         or public.can_manage_occurrence(o.id)
         or public.current_role() = 'gestor'
+        or (
+          auth.uid() is not null
+          and public.current_role() = 'agent'
+          and image_type = 'resolution'
+          and public.is_occurrence_assigned_to_current_agent(o.id)
+        )
       )
   )
+);
+
+drop policy if exists occurrence_images_insert_agent_resolution_assigned on public.occurrence_images;
+create policy occurrence_images_insert_agent_resolution_assigned
+on public.occurrence_images
+for insert
+with check (
+  auth.uid() is not null
+  and public.current_role() = 'agent'
+  and image_type = 'resolution'
+  and public.is_occurrence_assigned_to_current_agent(occurrence_id)
 );
 
 drop policy if exists occurrence_images_update_manager on public.occurrence_images;
@@ -446,6 +592,10 @@ using (
         and o.user_id = auth.uid()
     )
   )
+  or (
+    public.current_role() = 'agent'
+    and public.is_occurrence_assigned_to_current_agent(occurrence_id)
+  )
   or public.can_manage_occurrence(occurrence_id)
   or public.current_role() = 'gestor'
 );
@@ -460,6 +610,16 @@ with check (
     public.can_manage_occurrence(occurrence_id)
     or public.current_role() = 'gestor'
   )
+);
+
+drop policy if exists occurrence_logs_insert_agent_assigned on public.occurrence_logs;
+create policy occurrence_logs_insert_agent_assigned
+on public.occurrence_logs
+for insert
+with check (
+  auth.uid() is not null
+  and public.current_role() = 'agent'
+  and public.is_occurrence_assigned_to_current_agent(occurrence_id)
 );
 
 drop policy if exists ratings_select_owner_or_manager on public.ratings;
@@ -493,6 +653,136 @@ with check (
       and o.status = 'resolvido'
   )
 );
+
+drop policy if exists institutions_select_gestor on public.institutions;
+create policy institutions_select_gestor
+on public.institutions
+for select
+using (public.current_role() = 'gestor');
+
+drop policy if exists institutions_insert_gestor on public.institutions;
+create policy institutions_insert_gestor
+on public.institutions
+for insert
+with check (public.current_role() = 'gestor');
+
+drop policy if exists institutions_update_gestor on public.institutions;
+create policy institutions_update_gestor
+on public.institutions
+for update
+using (public.current_role() = 'gestor')
+with check (public.current_role() = 'gestor');
+
+drop policy if exists institutions_delete_gestor on public.institutions;
+create policy institutions_delete_gestor
+on public.institutions
+for delete
+using (public.current_role() = 'gestor');
+
+drop policy if exists teams_select_gestor on public.teams;
+create policy teams_select_gestor
+on public.teams
+for select
+using (public.current_role() = 'gestor');
+
+drop policy if exists teams_insert_gestor on public.teams;
+create policy teams_insert_gestor
+on public.teams
+for insert
+with check (public.current_role() = 'gestor');
+
+drop policy if exists teams_update_gestor on public.teams;
+create policy teams_update_gestor
+on public.teams
+for update
+using (public.current_role() = 'gestor')
+with check (public.current_role() = 'gestor');
+
+drop policy if exists teams_delete_gestor on public.teams;
+create policy teams_delete_gestor
+on public.teams
+for delete
+using (public.current_role() = 'gestor');
+
+drop policy if exists operational_agents_select_gestor on public.operational_agents;
+create policy operational_agents_select_gestor
+on public.operational_agents
+for select
+using (public.current_role() = 'gestor');
+
+drop policy if exists operational_agents_select_self on public.operational_agents;
+create policy operational_agents_select_self
+on public.operational_agents
+for select
+using (auth.uid() = auth_user_id);
+
+drop policy if exists operational_agents_insert_gestor on public.operational_agents;
+create policy operational_agents_insert_gestor
+on public.operational_agents
+for insert
+with check (public.current_role() = 'gestor');
+
+drop policy if exists operational_agents_update_gestor on public.operational_agents;
+create policy operational_agents_update_gestor
+on public.operational_agents
+for update
+using (public.current_role() = 'gestor')
+with check (public.current_role() = 'gestor');
+
+drop policy if exists operational_agents_update_self on public.operational_agents;
+create policy operational_agents_update_self
+on public.operational_agents
+for update
+using (auth.uid() = auth_user_id)
+with check (auth.uid() = auth_user_id);
+
+drop policy if exists operational_agents_delete_gestor on public.operational_agents;
+create policy operational_agents_delete_gestor
+on public.operational_agents
+for delete
+using (public.current_role() = 'gestor');
+
+drop policy if exists occurrence_assignments_select_visibility on public.occurrence_assignments;
+create policy occurrence_assignments_select_visibility
+on public.occurrence_assignments
+for select
+using (
+  public.current_role() = 'gestor'
+  or exists (
+    select 1
+    from public.occurrences o
+    where o.id = occurrence_id
+      and o.user_id = auth.uid()
+  )
+);
+
+drop policy if exists occurrence_assignments_select_agent_own on public.occurrence_assignments;
+create policy occurrence_assignments_select_agent_own
+on public.occurrence_assignments
+for select
+using (
+  public.current_role() = 'agent'
+  and agent_id = public.current_operational_agent_id()
+);
+
+drop policy if exists occurrence_assignments_insert_gestor on public.occurrence_assignments;
+create policy occurrence_assignments_insert_gestor
+on public.occurrence_assignments
+for insert
+with check (public.current_role() = 'gestor');
+
+drop policy if exists occurrence_assignments_update_gestor on public.occurrence_assignments;
+create policy occurrence_assignments_update_gestor
+on public.occurrence_assignments
+for update
+using (public.current_role() = 'gestor')
+with check (public.current_role() = 'gestor');
+
+drop policy if exists occurrence_assignments_delete_gestor on public.occurrence_assignments;
+create policy occurrence_assignments_delete_gestor
+on public.occurrence_assignments
+for delete
+using (public.current_role() = 'gestor');
 
 -- Supabase storage bucket for occurrence images
 insert into storage.buckets (id, name, public)
@@ -836,4 +1126,3 @@ values
     now() - interval '12 hours'
   )
 on conflict (id) do nothing;
-

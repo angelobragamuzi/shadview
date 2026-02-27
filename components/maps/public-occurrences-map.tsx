@@ -1,9 +1,11 @@
 "use client";
 
 import { MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, STATUS_LABELS } from "@/lib/constants";
+import { getMapThemeFromDocument, getMapThemeStyles } from "@/lib/map-theme";
 import { loadGoogleMapsApi } from "@/lib/google-maps";
 import { formatDate } from "@/lib/occurrence-utils";
 import type { Occurrence } from "@/types";
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
 function buildInfoWindowContent(occurrence: Occurrence) {
@@ -53,6 +55,8 @@ export function PublicOccurrencesMap({
   occurrences: Occurrence[];
   className?: string;
 }) {
+  const { resolvedTheme } = useTheme();
+  const mapTheme = resolvedTheme === "dark" ? "dark" : "light";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<google.maps.Marker[]>([]);
@@ -78,6 +82,7 @@ export function PublicOccurrencesMap({
             streetViewControl: false,
             fullscreenControl: false,
             clickableIcons: false,
+            styles: getMapThemeStyles(getMapThemeFromDocument()),
           });
           infoWindowRef.current = new googleApi.maps.InfoWindow();
         }
@@ -104,6 +109,16 @@ export function PublicOccurrencesMap({
       markersRef.current = [];
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    mapRef.current.setOptions({
+      styles: getMapThemeStyles(mapTheme),
+    });
+  }, [mapTheme, mapReady]);
 
   useEffect(() => {
     if (!mapReady) {

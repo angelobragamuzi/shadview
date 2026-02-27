@@ -1,4 +1,4 @@
-﻿import { calculateSlaDeadline, resolutionHours } from "@/lib/occurrence-utils";
+import { calculateSlaDeadline, resolutionHours } from "@/lib/occurrence-utils";
 import type {
   CreateOccurrenceFormValues,
   ManageOccurrenceFormValues,
@@ -8,11 +8,47 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { geocodeAddress } from "@/services/geolocation-service";
 import type {
   DashboardMetrics,
+  Institution,
   Occurrence,
   OccurrenceFilters,
   OccurrenceWithRelations,
+  OperationalAgent,
   Profile,
+  Team,
 } from "@/types";
+
+export type CreateInstitutionInput = {
+  name: string;
+  acronym?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+};
+
+export type CreateTeamInput = {
+  institutionId: string;
+  name: string;
+  description?: string;
+};
+
+export type CreateOperationalAgentInput = {
+  fullName: string;
+  email: string;
+  phone: string;
+  institutionId?: string | null;
+  teamId?: string | null;
+};
+
+function normalizeOccurrenceWithRelations(row: any): OccurrenceWithRelations {
+  const assignmentSource = row?.assignment;
+  const assignment = Array.isArray(assignmentSource)
+    ? assignmentSource[0] ?? null
+    : assignmentSource ?? null;
+
+  return {
+    ...row,
+    assignment,
+  } as OccurrenceWithRelations;
+}
 
 export async function createOccurrence(
   values: CreateOccurrenceFormValues,
@@ -85,14 +121,29 @@ export async function fetchOccurrenceById(occurrenceId: string) {
         occurrence_logs(*),
         ratings(*),
         reporter:profiles!occurrences_user_id_fkey(id, full_name, role),
-        assignee:profiles!occurrences_assigned_to_fkey(id, full_name, role)
+        assignee:profiles!occurrences_assigned_to_fkey(id, full_name, role),
+        assignment:occurrence_assignments(
+          id,
+          occurrence_id,
+          institution_id,
+          team_id,
+          agent_id,
+          assigned_by,
+          notes,
+          assigned_at,
+          created_at,
+          updated_at,
+          institution:institutions(id, name, acronym),
+          team:teams(id, name),
+          agent:operational_agents(id, full_name)
+        )
       `,
       )
       .eq("id", occurrenceId)
       .maybeSingle();
 
     if (!error && data) {
-      return data as unknown as OccurrenceWithRelations;
+      return normalizeOccurrenceWithRelations(data);
     }
   }
 
@@ -154,7 +205,22 @@ export async function fetchDashboardOccurrences(
       occurrence_images(*),
       occurrence_logs(*),
       reporter:profiles!occurrences_user_id_fkey(id, full_name, role),
-      assignee:profiles!occurrences_assigned_to_fkey(id, full_name, role)
+      assignee:profiles!occurrences_assigned_to_fkey(id, full_name, role),
+      assignment:occurrence_assignments(
+        id,
+        occurrence_id,
+        institution_id,
+        team_id,
+        agent_id,
+        assigned_by,
+        notes,
+        assigned_at,
+        created_at,
+        updated_at,
+        institution:institutions(id, name, acronym),
+        team:teams(id, name),
+        agent:operational_agents(id, full_name)
+      )
     `,
     )
     .order("created_at", { ascending: false });
@@ -185,7 +251,7 @@ export async function fetchDashboardOccurrences(
     throw error;
   }
 
-  return data as unknown as OccurrenceWithRelations[];
+  return (data ?? []).map((row) => normalizeOccurrenceWithRelations(row));
 }
 
 export async function fetchAgents() {
@@ -201,6 +267,131 @@ export async function fetchAgents() {
   }
 
   return data as Profile[];
+}
+
+export async function fetchInstitutions() {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("institutions")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as Institution[];
+}
+
+export async function fetchTeams() {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("teams")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as Team[];
+}
+
+export async function fetchOperationalAgents() {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("operational_agents")
+    .select("*")
+    .eq("is_active", true)
+    .order("full_name", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as OperationalAgent[];
+}
+
+export async function createInstitution(
+  values: CreateInstitutionInput,
+  createdBy?: string | null,
+) {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("institutions")
+    .insert({
+      name: values.name.trim(),
+      acronym: values.acronym?.trim() || null,
+      contact_email: values.contactEmail?.trim() || null,
+      contact_phone: values.contactPhone?.trim() || null,
+      created_by: createdBy ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Institution;
+}
+
+export async function createTeam(
+  values: CreateTeamInput,
+  createdBy?: string | null,
+) {
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("teams")
+    .insert({
+      institution_id: values.institutionId,
+      name: values.name.trim(),
+      description: values.description?.trim() || null,
+      created_by: createdBy ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Team;
+}
+
+export async function createOperationalAgent(
+  values: CreateOperationalAgentInput,
+  createdBy?: string | null,
+) {
+  const email = values.email.trim();
+  const phone = values.phone.trim();
+
+  if (!email) {
+    throw new Error("Informe o e-mail do agente.");
+  }
+  if (!phone) {
+    throw new Error("Informe o telefone do agente.");
+  }
+
+  const supabase = createBrowserSupabaseClient();
+  const { data, error } = await supabase
+    .from("operational_agents")
+    .insert({
+      full_name: values.fullName.trim(),
+      email,
+      phone,
+      institution_id: values.institutionId || null,
+      team_id: values.teamId || null,
+      created_by: createdBy ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data as OperationalAgent;
 }
 
 export async function manageOccurrence(
@@ -222,6 +413,39 @@ export async function manageOccurrence(
 
   if (updateError) {
     throw updateError;
+  }
+
+  const hasOperationalAssignment = Boolean(
+    values.institutionId || values.teamId || values.operationalAgentId,
+  );
+
+  if (hasOperationalAssignment) {
+    const { error: assignmentError } = await supabase
+      .from("occurrence_assignments")
+      .upsert(
+        {
+          occurrence_id: occurrenceId,
+          institution_id: values.institutionId,
+          team_id: values.teamId,
+          agent_id: values.operationalAgentId,
+          assigned_by: actorId ?? null,
+          assigned_at: new Date().toISOString(),
+        },
+        { onConflict: "occurrence_id" },
+      );
+
+    if (assignmentError) {
+      throw assignmentError;
+    }
+  } else {
+    const { error: deleteAssignmentError } = await supabase
+      .from("occurrence_assignments")
+      .delete()
+      .eq("occurrence_id", occurrenceId);
+
+    if (deleteAssignmentError) {
+      throw deleteAssignmentError;
+    }
   }
 
   const { error: logError } = await supabase.from("occurrence_logs").insert({
@@ -261,6 +485,29 @@ export async function addOccurrenceRating(
   }
 
   return data;
+}
+
+export async function purgeAllAppData() {
+  const supabase = createBrowserSupabaseClient();
+
+  const tableNames = [
+    "occurrence_assignments",
+    "occurrences",
+    "operational_agents",
+    "teams",
+    "institutions",
+  ] as const;
+
+  for (const tableName of tableNames) {
+    const { error } = await supabase
+      .from(tableName)
+      .delete()
+      .not("id", "is", null);
+
+    if (error) {
+      throw error;
+    }
+  }
 }
 
 export function buildDashboardMetrics(occurrences: Occurrence[]): DashboardMetrics {
@@ -318,4 +565,3 @@ export function buildDashboardMetrics(occurrences: Occurrence[]): DashboardMetri
     monthlyComparison,
   };
 }
-

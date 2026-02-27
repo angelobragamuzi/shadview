@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
-import { Public_Sans, Source_Serif_4 } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Serif } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
-const publicSans = Public_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-public-sans",
+  variable: "--font-ibm-plex-sans",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
-const sourceSerif = Source_Serif_4({
+const ibmPlexSerif = IBM_Plex_Serif({
   subsets: ["latin"],
-  variable: "--font-source-serif",
+  variable: "--font-ibm-plex-serif",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${publicSans.variable} ${sourceSerif.variable} bg-background font-sans text-foreground antialiased`}
+        className={`${ibmPlexSans.variable} ${ibmPlexSerif.variable} bg-background font-sans text-foreground antialiased`}
       >
         <AppProviders>
           <SiteHeader />

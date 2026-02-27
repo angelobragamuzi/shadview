@@ -32,6 +32,9 @@ export const createOccurrenceSchema = z.object({
 export const manageOccurrenceSchema = z.object({
   status: z.enum(OCCURRENCE_STATUSES),
   assignedTo: z.string().uuid().nullable(),
+  institutionId: z.string().uuid().nullable(),
+  teamId: z.string().uuid().nullable(),
+  operationalAgentId: z.string().uuid().nullable(),
   comment: z.string().max(1200, "Comentário muito longo.").optional(),
   isInternal: z.boolean(),
 });

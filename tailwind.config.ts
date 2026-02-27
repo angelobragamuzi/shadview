@@ -59,6 +59,10 @@ const config: Config = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			}
+  		},
+  		fontFamily: {
+  			sans: ['var(--font-ibm-plex-sans)', 'sans-serif'],
+  			serif: ['var(--font-ibm-plex-serif)', 'serif']
   		}
   	}
   },

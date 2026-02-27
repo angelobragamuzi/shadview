@@ -1,10 +1,14 @@
 "use client";
 
 import { CATEGORY_LABELS, MAP_DEFAULT_CENTER, MAP_DEFAULT_ZOOM, STATUS_LABELS } from "@/lib/constants";
+import { ProtocolQuickViewDialog } from "@/components/occurrences/protocol-quick-view-dialog";
+import { getMapThemeFromDocument, getMapThemeStyles } from "@/lib/map-theme";
 import { loadGoogleMapsApi } from "@/lib/google-maps";
 import { formatDate } from "@/lib/occurrence-utils";
 import type { OccurrenceWithRelations } from "@/types";
 import { X } from "lucide-react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export type OccurrenceMapMode = "heatmap" | "markers";
@@ -65,6 +69,8 @@ export function HeatmapOccurrencesMap({
   className?: string;
   mode?: OccurrenceMapMode;
 }) {
+  const { resolvedTheme } = useTheme();
+  const mapTheme = resolvedTheme === "dark" ? "dark" : "light";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const heatmapRef = useRef<google.maps.visualization.HeatmapLayer | null>(null);
@@ -77,6 +83,8 @@ export function HeatmapOccurrencesMap({
   const [selectedOccurrence, setSelectedOccurrence] = useState<OccurrenceWithRelations | null>(
     null,
   );
+  const [protocolPreviewOccurrence, setProtocolPreviewOccurrence] =
+    useState<OccurrenceWithRelations | null>(null);
 
   const heatPoints = useMemo(() => buildHeatPoints(occurrences), [occurrences]);
 
@@ -121,6 +129,7 @@ export function HeatmapOccurrencesMap({
             streetViewControl: false,
             fullscreenControl: false,
             clickableIcons: false,
+            styles: getMapThemeStyles(getMapThemeFromDocument()),
           });
         }
 
@@ -158,6 +167,16 @@ export function HeatmapOccurrencesMap({
       heatmapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    mapRef.current.setOptions({
+      styles: getMapThemeStyles(mapTheme),
+    });
+  }, [mapTheme, mapReady]);
 
   useEffect(() => {
     if (mode !== "markers") {
@@ -311,16 +330,41 @@ export function HeatmapOccurrencesMap({
                 {formatDate(selectedOccurrence.created_at)}
               </p>
             </div>
-            <a
-              href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedOccurrence.latitude},${selectedOccurrence.longitude}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex w-full justify-center rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-primary transition hover:bg-accent"
-            >
-              Ver no Street View
-            </a>
+            <div className="mt-3 grid gap-2">
+              <a
+                href={`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedOccurrence.latitude},${selectedOccurrence.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-full justify-center rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-primary transition hover:bg-accent"
+              >
+                Ver no Street View
+              </a>
+              <button
+                type="button"
+                onClick={() => setProtocolPreviewOccurrence(selectedOccurrence)}
+                className="inline-flex w-full justify-center rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-accent"
+              >
+                Ver protocolo
+              </button>
+              <Link
+                href={`/dashboard/occurrences?occurrenceId=${selectedOccurrence.id}`}
+                className="inline-flex w-full justify-center rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                Gerenciar ocorrência
+              </Link>
+            </div>
           </aside>
         ) : null}
+
+        <ProtocolQuickViewDialog
+          occurrence={protocolPreviewOccurrence}
+          open={Boolean(protocolPreviewOccurrence)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setProtocolPreviewOccurrence(null);
+            }
+          }}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/types";
 import {
+  Building2,
   ClipboardList,
   Columns2,
   Home,
@@ -16,6 +18,7 @@ import {
   MapPinned,
   Menu,
   ScrollText,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -33,6 +36,11 @@ const navigation = [
     title: "Ocorrências",
     href: "/dashboard/occurrences",
     icon: ClipboardList,
+  },
+  {
+    title: "Cadastro operacional",
+    href: "/dashboard/operational",
+    icon: Building2,
   },
   {
     title: "Mapa",
@@ -59,6 +67,14 @@ function Sidebar({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
+  const sidebarItemClass = (active?: boolean) =>
+    cn(
+      "flex w-full items-center rounded-md py-2 text-sm transition-all duration-200",
+      collapsed ? "justify-center px-2" : "justify-start px-3",
+      active
+        ? "bg-blue-800 text-white dark:bg-slate-800"
+        : "text-blue-100 hover:bg-blue-900/70 hover:text-white dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+    );
 
   return (
     <div className="flex h-full flex-col bg-blue-950 text-blue-50 transition-[padding] duration-300 dark:bg-slate-900 dark:text-slate-100">
@@ -92,13 +108,7 @@ function Sidebar({
               key={item.href}
               href={item.href}
               title={collapsed ? item.title : undefined}
-              className={cn(
-                "flex items-center rounded-md py-2 text-sm transition-all duration-200",
-                collapsed ? "justify-center px-2" : "px-3",
-                active
-                  ? "bg-blue-800 text-white dark:bg-slate-800"
-                  : "text-blue-100 hover:bg-blue-900/70 hover:text-white dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100",
-              )}
+              className={sidebarItemClass(active)}
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span
@@ -113,6 +123,57 @@ function Sidebar({
           );
         })}
       </nav>
+      <div className={cn("mt-auto", collapsed ? "p-2" : "p-3")}>
+        <Separator className="bg-blue-900 dark:bg-slate-800" />
+        <div className="mt-2 space-y-1">
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            asChild
+            title={collapsed ? "Formulário público" : undefined}
+            className={sidebarItemClass(false)}
+          >
+            <Link href="/occurrence" target="_blank" rel="noreferrer">
+              <MapPinned className="h-4 w-4 shrink-0" />
+              <span
+                className={cn(
+                  "overflow-hidden whitespace-nowrap transition-all duration-200",
+                  collapsed ? "max-w-0 opacity-0" : "ml-2 max-w-[160px] opacity-100",
+                )}
+              >
+                Formulário público
+              </span>
+            </Link>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            asChild
+            title={collapsed ? "Configurações" : undefined}
+            className={sidebarItemClass(pathname === "/dashboard/settings")}
+          >
+            <Link href="/dashboard/settings" aria-label="Configurações">
+              <Settings className="h-4 w-4 shrink-0" />
+              <span
+                className={cn(
+                  "overflow-hidden whitespace-nowrap transition-all duration-200",
+                  collapsed ? "max-w-0 opacity-0" : "ml-2 max-w-[120px] opacity-100",
+                )}
+              >
+                Configurações
+              </span>
+            </Link>
+          </Button>
+
+          <SignOutButton
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            showLabel={!collapsed}
+            className={sidebarItemClass(false)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -172,15 +233,8 @@ export function DashboardShell({
                 </div>
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
-                  <Link href="/occurrence" target="_blank" rel="noreferrer">
-                    <MapPinned className="mr-2 h-4 w-4" />
-                    <span className="hidden md:inline">Formulário público</span>
-                    <span className="md:hidden">Público</span>
-                  </Link>
-                </Button>
+                <NotificationsMenu />
                 <ThemeToggle />
-                <SignOutButton />
               </div>
             </div>
           </header>

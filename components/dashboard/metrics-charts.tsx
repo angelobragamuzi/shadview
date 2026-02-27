@@ -10,6 +10,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Legend,
   Line,
   LineChart,
@@ -23,6 +24,10 @@ import {
 
 const PIE_COLORS_LIGHT = ["#0f4c81", "#2d6fa3", "#4d8cc0", "#7eaed2", "#9ebfde"];
 const PIE_COLORS_DARK = ["#60a5fa", "#38bdf8", "#22d3ee", "#34d399", "#a3e635"];
+const CATEGORY_TICK_LABELS: Record<string, string> = {
+  "Iluminação pública": "Iluminação",
+  "Lixo urbano": "Lixo",
+};
 
 export function MetricsCharts({
   metrics,
@@ -44,13 +49,15 @@ export function MetricsCharts({
   };
   const lineOpenColor = isDark ? "#60a5fa" : "#0f4c81";
   const lineResolvedColor = isDark ? "#4ade80" : "#35a46b";
-  const barColor = isDark ? "#60a5fa" : "#0f4c81";
+  const categoryBarColor = isDark ? "#60a5fa" : "#5b8fb0";
   const pieColors = isDark ? PIE_COLORS_DARK : PIE_COLORS_LIGHT;
 
-  const categoryData = Object.entries(metrics.byCategory).map(([key, value]) => ({
-    category: CATEGORY_LABELS[key as keyof typeof CATEGORY_LABELS] ?? key,
-    total: value,
-  }));
+  const categoryData = Object.entries(metrics.byCategory)
+    .map(([key, value]) => ({
+      category: CATEGORY_LABELS[key as keyof typeof CATEGORY_LABELS] ?? key,
+      total: value,
+    }))
+    .sort((left, right) => right.total - left.total);
 
   const statusData = Object.entries(metrics.byStatus).map(([key, value]) => ({
     status: STATUS_LABELS[key as keyof typeof STATUS_LABELS] ?? key,
@@ -180,31 +187,49 @@ export function MetricsCharts({
               compact && "h-[230px] sm:h-[250px] lg:h-auto lg:min-h-0 lg:flex-1",
             )}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={categoryData}
-                layout="vertical"
-                margin={{ left: compact ? 4 : 8, right: 12, top: 6, bottom: 6 }}
-              >
-                <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
-                <XAxis
-                  type="number"
-                  axisLine={{ stroke: chartGridColor }}
-                  tickLine={{ stroke: chartGridColor }}
-                  tick={{ fill: chartTextColor, fontSize: 12 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="category"
-                  width={compact ? 102 : 120}
-                  axisLine={{ stroke: chartGridColor }}
-                  tickLine={{ stroke: chartGridColor }}
-                  tick={{ fill: chartTextColor, fontSize: 11 }}
-                />
-                <Tooltip contentStyle={chartTooltipStyle} />
-                <Bar dataKey="total" fill={barColor} radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {categoryData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Nenhuma ocorrência categorizada no período.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={categoryData}
+                  margin={{ top: 18, right: 8, left: -8, bottom: 8 }}
+                  barCategoryGap={compact ? "14%" : "18%"}
+                >
+                  <CartesianGrid
+                    stroke={chartGridColor}
+                    strokeDasharray="3 3"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="category"
+                    axisLine={{ stroke: chartGridColor }}
+                    tickLine={{ stroke: chartGridColor }}
+                    tick={{ fill: chartTextColor, fontSize: 11 }}
+                    interval={0}
+                    tickFormatter={(value) =>
+                      CATEGORY_TICK_LABELS[String(value)] ?? String(value)
+                    }
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    axisLine={{ stroke: chartGridColor }}
+                    tickLine={{ stroke: chartGridColor }}
+                    tick={{ fill: chartTextColor, fontSize: 11 }}
+                  />
+                  <Tooltip contentStyle={chartTooltipStyle} />
+                  <Bar dataKey="total" fill={categoryBarColor} radius={[4, 4, 0, 0]}>
+                    <LabelList
+                      dataKey="total"
+                      position="top"
+                      style={{ fill: chartTextColor, fontSize: 11, fontWeight: 600 }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -7,8 +7,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
+      storageKey="shadboard-theme"
+      themes={["light", "dark"]}
       disableTransitionOnChange
     >
       {children}

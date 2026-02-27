@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { loginSchema, type LoginFormValues } from "@/lib/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -56,9 +57,14 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email institucional</FormLabel>
+              <FormLabel>E-mail institucional</FormLabel>
               <FormControl>
-                <Input placeholder="voce@prefeitura.gov.br" {...field} />
+                <Input
+                  placeholder="seu.nome@prefeitura.gov.br"
+                  className="h-11"
+                  autoComplete="email"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -71,18 +77,32 @@ export function LoginForm() {
             <FormItem>
               <FormLabel>Senha</FormLabel>
               <FormControl>
-                <Input placeholder="******" type="password" {...field} />
+                <Input
+                  placeholder="Digite sua senha"
+                  type="password"
+                  className="h-11"
+                  autoComplete="current-password"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="flex justify-end">
+          <Link
+            href="/sistema"
+            className="text-xs text-muted-foreground transition-colors hover:text-primary"
+          >
+            Precisa de ajuda para acessar?
+          </Link>
+        </div>
         <Button
-          className="w-full"
+          className="h-11 w-full"
           type="submit"
           disabled={form.formState.isSubmitting}
         >
-          {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
+          {form.formState.isSubmitting ? "Entrando..." : "Acessar painel"}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </form>
