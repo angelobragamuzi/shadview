@@ -20,8 +20,13 @@ const ibmPlexSerif = IBM_Plex_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "ShadBoard | Gestão Urbana Inteligente",
-    template: "%s | ShadBoard",
+    default: "Shadboard - Gestão urbana",
+    template: "%s | Shadboard - Gestão urbana",
+  },
+  icons: {
+    icon: "/icon-logo.svg",
+    shortcut: "/icon-logo.svg",
+    apple: "/icon-logo.svg",
   },
   description:
     "Plataforma inteligente de gestão de demandas urbanas para prefeituras e órgãos públicos.",
@@ -45,3 +50,4 @@ export default function RootLayout({
     </html>
   );
 }
+

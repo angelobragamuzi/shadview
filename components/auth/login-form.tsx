@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { loginSchema, type LoginFormValues } from "@/lib/schemas/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -57,10 +56,10 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>E-mail institucional</FormLabel>
+              <FormLabel>E-mail</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="seu.nome@prefeitura.gov.br"
+                  placeholder="nome@email.com"
                   className="h-11"
                   autoComplete="email"
                   {...field}
@@ -89,14 +88,6 @@ export function LoginForm() {
             </FormItem>
           )}
         />
-        <div className="flex justify-end">
-          <Link
-            href="/sistema"
-            className="text-xs text-muted-foreground transition-colors hover:text-primary"
-          >
-            Precisa de ajuda para acessar?
-          </Link>
-        </div>
         <Button
           className="h-11 w-full"
           type="submit"

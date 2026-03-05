@@ -1,23 +1,34 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ProtocolQuickViewDialog } from "@/components/occurrences/protocol-quick-view-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { LoadingState } from "@/components/ui/loading-state";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CATEGORY_LABELS, STATUS_LABELS } from "@/lib/constants";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CATEGORY_LABELS, OCCURRENCE_CATEGORIES, STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/occurrence-utils";
 import { fetchDashboardOccurrences } from "@/services/occurrence-service";
 import { exportOccurrencesCsv, exportOccurrencesPdf } from "@/services/report-service";
-import type { OccurrenceWithRelations } from "@/types";
+import type { OccurrenceCategory, OccurrenceWithRelations } from "@/types";
+import type { CheckedState } from "@radix-ui/react-checkbox";
 import {
   ChevronLeft,
   ChevronRight,
   Download,
   FileSpreadsheet,
   FileText,
+  ListFilter,
   Trophy,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -31,9 +42,14 @@ export default function DashboardReportsPage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [protocolPreviewOccurrence, setProtocolPreviewOccurrence] =
     useState<OccurrenceWithRelations | null>(null);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    from: string;
+    to: string;
+    categories: OccurrenceCategory[];
+  }>({
     from: "",
     to: "",
+    categories: [],
   });
 
   const loadData = async () => {
@@ -42,6 +58,7 @@ export default function DashboardReportsPage() {
       const data = await fetchDashboardOccurrences({
         from: filters.from ? new Date(`${filters.from}T00:00:00`).toISOString() : undefined,
         to: filters.to ? new Date(`${filters.to}T23:59:59`).toISOString() : undefined,
+        categories: filters.categories.length > 0 ? filters.categories : undefined,
       });
       setOccurrences(data);
       setPageIndex(0);
@@ -55,14 +72,75 @@ export default function DashboardReportsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const toggleTopic = (category: OccurrenceCategory, checked: CheckedState) => {
+    setFilters((previous) => {
+      const shouldInclude = checked === true;
+      const alreadySelected = previous.categories.includes(category);
+
+      if (shouldInclude && !alreadySelected) {
+        return { ...previous, categories: [...previous.categories, category] };
+      }
+
+      if (!shouldInclude && alreadySelected) {
+        return {
+          ...previous,
+          categories: previous.categories.filter((item) => item !== category),
+        };
+      }
+
+      return previous;
+    });
+  };
+
+  const clearTopicFilters = () => {
+    setFilters((previous) => ({ ...previous, categories: [] }));
+  };
+
+  const selectedTopicLabel = useMemo(() => {
+    if (filters.categories.length === 0) {
+      return "Todos os tópicos";
+    }
+
+    if (filters.categories.length === 1) {
+      return CATEGORY_LABELS[filters.categories[0]];
+    }
+
+    return `${filters.categories.length} tópicos combinados`;
+  }, [filters.categories]);
+
   const neighborhoodRanking = useMemo(() => {
     const bucket: Record<string, number> = {};
+
     for (const occurrence of occurrences) {
       const neighborhood = occurrence.neighborhood ?? "Não informado";
       bucket[neighborhood] = (bucket[neighborhood] ?? 0) + 1;
     }
+
     return Object.entries(bucket)
       .map(([name, total]) => ({ name, total }))
+      .sort((left, right) => right.total - left.total);
+  }, [occurrences]);
+
+  const categoryRanking = useMemo(() => {
+    const bucket: Record<OccurrenceCategory, number> = {
+      buraco: 0,
+      iluminacao: 0,
+      lixo: 0,
+      entulho: 0,
+      esgoto: 0,
+      outros: 0,
+    };
+
+    for (const occurrence of occurrences) {
+      bucket[occurrence.category] += 1;
+    }
+
+    return Object.entries(bucket)
+      .filter(([, total]) => total > 0)
+      .map(([category, total]) => ({
+        category: category as OccurrenceCategory,
+        total,
+      }))
       .sort((left, right) => right.total - left.total);
   }, [occurrences]);
 
@@ -72,22 +150,38 @@ export default function DashboardReportsPage() {
   const end = start + REPORT_PAGE_SIZE;
   const pageRows = occurrences.slice(start, end);
   const bestNeighborhood = neighborhoodRanking[0];
+  const bestTopic = categoryRanking[0];
+
+  const exportContext = useMemo(
+    () => ({
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+      categories: filters.categories.length > 0 ? filters.categories : undefined,
+    }),
+    [filters.from, filters.to, filters.categories],
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Relatórios executivos</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Relatórios</h1>
           <p className="text-sm text-muted-foreground">
-            Período, exportação e leitura rápida por tabela ou ranking.
+            Relatórios por período, tópico único ou combinação de tópicos.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => exportOccurrencesCsv(occurrences)}>
+          <Button
+            variant="outline"
+            onClick={() => exportOccurrencesCsv(occurrences, exportContext)}
+          >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
-          <Button variant="outline" onClick={() => exportOccurrencesPdf(occurrences)}>
+          <Button
+            variant="outline"
+            onClick={() => exportOccurrencesPdf(occurrences, exportContext)}
+          >
             <FileText className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
@@ -95,8 +189,8 @@ export default function DashboardReportsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-5">
-          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_auto]">
+        <CardContent className="space-y-3 pt-5">
+          <div className="grid gap-3 xl:grid-cols-[1fr_1fr_260px_auto_auto]">
             <Input
               type="date"
               value={filters.from}
@@ -111,27 +205,79 @@ export default function DashboardReportsPage() {
                 setFilters((previous) => ({ ...previous, to: event.target.value }))
               }
             />
-            <Button onClick={() => void loadData()}>
-              <Download className="mr-2 h-4 w-4" />
-              Atualizar período
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="justify-between">
+                  <span className="truncate">{selectedTopicLabel}</span>
+                  <ListFilter className="ml-2 h-4 w-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[280px]">
+                <DropdownMenuLabel>Tópicos do relatório</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {OCCURRENCE_CATEGORIES.map((category) => (
+                  <DropdownMenuCheckboxItem
+                    key={category}
+                    checked={filters.categories.includes(category)}
+                    onCheckedChange={(checked) => toggleTopic(category, checked)}
+                  >
+                    {CATEGORY_LABELS[category]}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button
+              variant="outline"
+              onClick={clearTopicFilters}
+              disabled={filters.categories.length === 0}
+            >
+              Limpar tópicos
             </Button>
+
+            <Button onClick={() => void loadData()} disabled={loading}>
+              <Download className="mr-2 h-4 w-4" />
+              Atualizar relatório
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {filters.categories.length === 0 ? (
+              <Badge variant="secondary">Todos os tópicos</Badge>
+            ) : (
+              filters.categories.map((category) => (
+                <Badge key={category} variant="secondary">
+                  {CATEGORY_LABELS[category]}
+                </Badge>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border border-border/70 bg-card/70 px-4 py-3">
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
             Ocorrências no período
           </p>
           <p className="mt-1 text-xl font-semibold text-foreground">{occurrences.length}</p>
         </div>
+
         <div className="rounded-lg border border-border/70 bg-card/70 px-4 py-3">
           <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
             Bairros no relatório
           </p>
           <p className="mt-1 text-xl font-semibold text-foreground">{neighborhoodRanking.length}</p>
         </div>
+
+        <div className="rounded-lg border border-border/70 bg-card/70 px-4 py-3">
+          <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+            Tópicos no relatório
+          </p>
+          <p className="mt-1 text-xl font-semibold text-foreground">{categoryRanking.length}</p>
+        </div>
+
         <div className="rounded-lg border border-border/70 bg-card/70 px-4 py-3">
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.12em] text-muted-foreground">
             <Trophy className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
@@ -156,7 +302,7 @@ export default function DashboardReportsPage() {
         <TabsContent value="table">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Relatório por período</CardTitle>
+              <CardTitle>Relatório por período e tópicos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Table>
@@ -179,7 +325,7 @@ export default function DashboardReportsPage() {
                   ) : occurrences.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        Nenhum registro no período selecionado.
+                        Nenhum registro para os filtros selecionados.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -207,8 +353,7 @@ export default function DashboardReportsPage() {
 
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2">
                 <p className="text-sm text-muted-foreground">
-                  Mostrando {occurrences.length === 0 ? 0 : start + 1} a{" "}
-                  {Math.min(end, occurrences.length)} de {occurrences.length}.
+                  Mostrando {occurrences.length === 0 ? 0 : start + 1} a {Math.min(end, occurrences.length)} de {occurrences.length}.
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -241,35 +386,70 @@ export default function DashboardReportsPage() {
         </TabsContent>
 
         <TabsContent value="ranking">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center">
-                <Trophy className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
-                Ranking de bairros
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {neighborhoodRanking.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sem dados de bairros.</p>
-              ) : (
-                <div className="grid gap-2 md:grid-cols-2">
-                  {neighborhoodRanking.slice(0, 12).map((item, index) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2"
-                    >
-                      <p className="line-clamp-1 text-sm font-medium">
-                        {index + 1}. {item.name}
-                      </p>
-                      <span className="rounded bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                        {item.total}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center">
+                  <Trophy className="mr-2 h-5 w-5 text-amber-500 dark:text-amber-400" />
+                  Ranking de bairros
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {neighborhoodRanking.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados de bairros.</p>
+                ) : (
+                  <div className="grid gap-2">
+                    {neighborhoodRanking.slice(0, 12).map((item, index) => (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2"
+                      >
+                        <p className="line-clamp-1 text-sm font-medium">
+                          {index + 1}. {item.name}
+                        </p>
+                        <span className="rounded bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                          {item.total}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center">Tópicos mais frequentes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {categoryRanking.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados de tópicos.</p>
+                ) : (
+                  <div className="grid gap-2">
+                    {categoryRanking.map((item, index) => (
+                      <div
+                        key={item.category}
+                        className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 px-3 py-2"
+                      >
+                        <p className="line-clamp-1 text-sm font-medium">
+                          {index + 1}. {CATEGORY_LABELS[item.category]}
+                        </p>
+                        <span className="rounded bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                          {item.total}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {bestTopic ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Tópico líder: <span className="font-medium text-foreground">{CATEGORY_LABELS[bestTopic.category]}</span>
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

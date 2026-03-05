@@ -67,6 +67,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ClipboardPen,
+  Eye,
   Save,
 } from "lucide-react";
 import Link from "next/link";
@@ -261,18 +262,16 @@ export function OccurrenceManagementTable({
           </Button>
         ),
         cell: ({ row }) => (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <p className="max-w-[280px] truncate text-sm font-medium">
               {row.original.title}
             </p>
-            <button
-              type="button"
-              onClick={() => setProtocolPreviewOccurrence(row.original)}
-              className="inline-flex font-mono text-[11px] text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary"
+            <span
+              className="inline-flex rounded bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
               title={row.original.id}
             >
               {row.original.id.slice(0, 10)}
-            </button>
+            </span>
           </div>
         ),
       },
@@ -413,9 +412,23 @@ export function OccurrenceManagementTable({
         enableSorting: false,
         header: () => <span className="sr-only">Ações</span>,
         cell: ({ row }) => (
-          <div className="text-right">
-            <Button variant="outline" size="sm" onClick={() => handleOpen(row.original)}>
-              <ClipboardPen className="mr-2 h-4 w-4" />
+          <div className="flex justify-end gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs"
+              onClick={() => setProtocolPreviewOccurrence(row.original)}
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
+              Protocolo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 text-xs"
+              onClick={() => handleOpen(row.original)}
+            >
+              <ClipboardPen className="mr-1.5 h-3.5 w-3.5" />
               Gerenciar
             </Button>
           </div>

@@ -225,7 +225,9 @@ export async function fetchDashboardOccurrences(
     )
     .order("created_at", { ascending: false });
 
-  if (filters.category) {
+  if (filters.categories && filters.categories.length > 0) {
+    query = query.in("category", filters.categories);
+  } else if (filters.category) {
     query = query.eq("category", filters.category);
   }
 
@@ -531,29 +533,38 @@ export function buildDashboardMetrics(occurrences: Occurrence[]): DashboardMetri
     }
   }
 
-  const monthlyMap = new Map<string, { abertas: number; resolvidas: number }>();
+  const monthlyMap = new Map<
+    string,
+    { monthLabel: string; abertas: number; resolvidas: number }
+  >();
 
   for (const occurrence of occurrences) {
-    const month = new Date(occurrence.created_at).toLocaleDateString("pt-BR", {
+    const createdAtDate = new Date(occurrence.created_at);
+    const monthKey = createdAtDate.toISOString().slice(0, 7);
+    const monthLabel = createdAtDate.toLocaleDateString("pt-BR", {
       month: "short",
       year: "2-digit",
     });
 
-    const current = monthlyMap.get(month) ?? { abertas: 0, resolvidas: 0 };
+    const current = monthlyMap.get(monthKey) ?? {
+      monthLabel,
+      abertas: 0,
+      resolvidas: 0,
+    };
     current.abertas += 1;
     if (occurrence.status === "resolvido") {
       current.resolvidas += 1;
     }
-    monthlyMap.set(month, current);
+    monthlyMap.set(monthKey, current);
   }
 
-  const monthlyComparison = Array.from(monthlyMap.entries()).map(
-    ([month, values]) => ({
-      month,
+  const monthlyComparison = Array.from(monthlyMap.entries())
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([, values]) => ({
+      month: values.monthLabel,
       abertas: values.abertas,
       resolvidas: values.resolvidas,
-    }),
-  );
+    }));
 
   return {
     total: occurrences.length,

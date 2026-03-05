@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { DashboardMetrics } from "@/types";
-import { Activity, Clock3, MapPinned, Workflow } from "lucide-react";
+import { Activity, CircleHelp, Clock3, MapPinned, Workflow } from "lucide-react";
 
 export function SummaryCards({
   metrics,
@@ -62,7 +62,16 @@ export function SummaryCards({
           <p className={cn("font-semibold text-foreground", compact ? "text-2xl" : "text-3xl")}>
             {metrics.avgResolutionHours.toFixed(1)}h
           </p>
-          <p className="text-xs text-muted-foreground">Indicador principal de SLA</p>
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            Indicador principal de SLA
+            <span
+              className="inline-flex cursor-help items-center justify-center rounded-full"
+              title="SLA significa Acordo de Nível de Serviço: prazo-meta para atender e resolver uma ocorrência."
+              aria-label="SLA significa Acordo de Nível de Serviço: prazo-meta para atender e resolver uma ocorrência."
+            >
+              <CircleHelp className="h-3.5 w-3.5" />
+            </span>
+          </p>
         </CardContent>
       </Card>
 

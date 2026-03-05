@@ -1,12 +1,11 @@
 "use client";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { ShadboardLogo } from "@/components/brand/shadboard-logo";
 import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ROLE_LABELS } from "@/lib/constants";
 import type { UserRole } from "@/types";
 import {
   Building2,
@@ -81,20 +80,11 @@ function Sidebar({
       <div className={cn("py-5", collapsed ? "px-3" : "px-6")}>
         <div className={cn("flex items-start", collapsed ? "justify-center" : "justify-between")}>
           <div className={cn("min-w-0", collapsed && "text-center")}>
-            <p className="text-xs uppercase tracking-[0.2em] text-blue-200 dark:text-slate-300">
-              {collapsed ? "SB" : "ShadBoard"}
-            </p>
-            <div
-              className={cn(
-                "overflow-hidden transition-all duration-200",
-                collapsed ? "mt-0 max-h-0 opacity-0" : "mt-1 max-h-16 opacity-100",
-              )}
-            >
-              <h1 className="text-xl font-semibold">Gestão Urbana</h1>
-              <Badge className="mt-3 border border-blue-100 bg-blue-100 text-blue-900 hover:bg-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-800">
-                {ROLE_LABELS[role]}
-              </Badge>
-            </div>
+            <ShadboardLogo
+              mode={collapsed ? "mark" : "full"}
+              tone="inverse"
+              className={cn("transition-all duration-200", collapsed ? "h-6" : "h-7")}
+            />
           </div>
         </div>
       </div>
@@ -228,7 +218,7 @@ export function DashboardShell({
                   <Columns2 className="h-4 w-4" />
                 </Button>
                 <div>
-                  <p className="text-sm text-muted-foreground">Painel Executivo</p>
+                  <p className="text-sm text-muted-foreground">Painel de gestão</p>
                   <p className="text-sm font-semibold text-foreground">{fullName}</p>
                 </div>
               </div>

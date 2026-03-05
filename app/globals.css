@@ -29,6 +29,8 @@
     --chart-3: 22 76% 48%;
     --chart-4: 40 82% 52%;
     --chart-5: 345 73% 48%;
+    --logo-inverse-mark: 210 40% 90%;
+    --logo-inverse-word: 210 40% 98%;
     --radius: 0.5rem;
     --background-pattern:
       radial-gradient(circle at 10% 0%, hsl(210 100% 97%), transparent 45%),
@@ -61,6 +63,8 @@
     --chart-3: 27 93% 57%;
     --chart-4: 50 90% 58%;
     --chart-5: 339 82% 62%;
+    --logo-inverse-mark: 207 95% 79%;
+    --logo-inverse-word: 210 40% 98%;
     --background-pattern:
       radial-gradient(circle at 10% 0%, hsl(214 54% 16% / 0.55), transparent 45%),
       radial-gradient(circle at 100% 10%, hsl(212 65% 18% / 0.45), transparent 42%);

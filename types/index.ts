@@ -52,6 +52,7 @@ export interface OccurrenceFilters {
   from?: string;
   to?: string;
   category?: OccurrenceCategory;
+  categories?: OccurrenceCategory[];
   status?: OccurrenceStatus;
   neighborhood?: string;
 }

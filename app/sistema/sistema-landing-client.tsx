@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ShadboardLogo } from "@/components/brand/shadboard-logo";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Building2,
   ChartNoAxesCombined,
   ClipboardCheck,
   Layers3,
@@ -160,13 +160,8 @@ export function SistemaLandingClient() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6 md:px-6 md:pb-24 md:pt-8">
         <nav className="flex flex-wrap items-center gap-3 rounded-full border border-border/65 bg-background/75 px-4 py-3 shadow-sm backdrop-blur-xl md:px-6">
-          <Link href="/sistema" className="flex items-center gap-2.5">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <p className="text-sm font-semibold tracking-[0.14em] text-foreground md:text-base">
-              SHADBOARD
-            </p>
+          <Link href="/sistema" className="inline-flex items-center" aria-label="ShadBoard">
+            <ShadboardLogo className="h-6 md:h-7" />
           </Link>
 
           <div className="ml-auto flex flex-wrap items-center gap-4 sm:gap-6">

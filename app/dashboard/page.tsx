@@ -45,7 +45,7 @@ export default function DashboardHomePage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-4">
       <section className="shrink-0 rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
-        <p className="text-xs uppercase tracking-[0.18em] text-primary">Dashboard executivo</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-primary">Dashboard</p>
         <h1 className="mt-1 text-xl text-foreground sm:text-2xl">Visão consolidada da cidade</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Monitoramento em tempo real para {profile?.role ?? "gestão"} com foco em SLA,

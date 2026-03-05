@@ -11,7 +11,6 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
-  Legend,
   Line,
   LineChart,
   Pie,
@@ -25,7 +24,7 @@ import {
 const PIE_COLORS_LIGHT = ["#0f4c81", "#2d6fa3", "#4d8cc0", "#7eaed2", "#9ebfde"];
 const PIE_COLORS_DARK = ["#60a5fa", "#38bdf8", "#22d3ee", "#34d399", "#a3e635"];
 const CATEGORY_TICK_LABELS: Record<string, string> = {
-  "Iluminação pública": "Iluminação",
+  "Iluminacao publica": "Iluminacao",
   "Lixo urbano": "Lixo",
 };
 
@@ -64,6 +63,19 @@ export function MetricsCharts({
     total: value,
   }));
   const statusTotal = statusData.reduce((sum, item) => sum + item.total, 0);
+
+  let openedAccumulated = 0;
+  let resolvedAccumulated = 0;
+  const monthlyProgressiveData = metrics.monthlyComparison.map((item) => {
+    openedAccumulated += item.abertas;
+    resolvedAccumulated += item.resolvidas;
+
+    return {
+      month: item.month,
+      abertasAcumuladas: openedAccumulated,
+      resolvidasAcumuladas: resolvedAccumulated,
+    };
+  });
 
   return (
     <div
@@ -137,41 +149,70 @@ export function MetricsCharts({
               compact && "h-[230px] sm:h-[250px] lg:h-auto lg:min-h-0 lg:flex-1",
             )}
           >
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={metrics.monthlyComparison}
-                margin={{ left: compact ? -12 : 0, right: 8 }}
-              >
-                <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="month"
-                  axisLine={{ stroke: chartGridColor }}
-                  tickLine={{ stroke: chartGridColor }}
-                  tick={{ fill: chartTextColor, fontSize: 11 }}
-                />
-                <YAxis
-                  axisLine={{ stroke: chartGridColor }}
-                  tickLine={{ stroke: chartGridColor }}
-                  tick={{ fill: chartTextColor, fontSize: 11 }}
-                />
-                <Tooltip contentStyle={chartTooltipStyle} />
-                {!compact && <Legend wrapperStyle={{ color: chartTextColor, fontSize: 12 }} />}
-                <Line
-                  type="monotone"
-                  dataKey="abertas"
-                  name="Abertas"
-                  stroke={lineOpenColor}
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="resolvidas"
-                  name="Resolvidas"
-                  stroke={lineResolvedColor}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {monthlyProgressiveData.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Sem dados mensais para comparacao.
+              </div>
+            ) : (
+              <div className="flex h-full flex-col">
+                <div className="min-h-0 flex-1">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={monthlyProgressiveData}
+                      margin={{ left: compact ? -12 : 0, right: 8, top: 8, bottom: 8 }}
+                    >
+                      <CartesianGrid stroke={chartGridColor} strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        axisLine={{ stroke: chartGridColor }}
+                        tickLine={{ stroke: chartGridColor }}
+                        tick={{ fill: chartTextColor, fontSize: 11 }}
+                      />
+                      <YAxis
+                        allowDecimals={false}
+                        axisLine={{ stroke: chartGridColor }}
+                        tickLine={{ stroke: chartGridColor }}
+                        tick={{ fill: chartTextColor, fontSize: 11 }}
+                      />
+                      <Tooltip
+                        contentStyle={chartTooltipStyle}
+                        formatter={(value, name) => [
+                          value ?? 0,
+                          name === "abertasAcumuladas"
+                            ? "Ocorrencias acumuladas"
+                            : "Resolvidas acumuladas",
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="abertasAcumuladas"
+                        stroke={lineOpenColor}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="resolvidasAcumuladas"
+                        stroke={lineResolvedColor}
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: lineOpenColor }} />
+                    Ocorrencias acumuladas
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: lineResolvedColor }} />
+                    Resolvidas acumuladas
+                  </span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -179,7 +220,7 @@ export function MetricsCharts({
           className={cn("lg:col-span-3", compact && "flex min-h-0 flex-col lg:col-span-1")}
         >
           <CardHeader className={cn(compact && "shrink-0 p-4 pb-2")}>
-            <CardTitle className={cn(compact && "text-sm")}>Ocorrências por categoria</CardTitle>
+            <CardTitle className={cn(compact && "text-sm")}>Ocorrencias por categoria</CardTitle>
           </CardHeader>
           <CardContent
             className={cn(
@@ -189,7 +230,7 @@ export function MetricsCharts({
           >
             {categoryData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Nenhuma ocorrência categorizada no período.
+                Nenhuma ocorrencia categorizada no periodo.
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
